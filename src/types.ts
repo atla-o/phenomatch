@@ -18,15 +18,20 @@ export type Phenotype = {
 
 export type VirginityStatus = 'virgin' | 'non-virgin' | 'undisclosed'
 
+export type MatchType = 'cluster' | 'umingle'
+
 export type Match = {
   phenotype: Phenotype
   compatibility: number
   sharedTraits: string[]
   complementaryTraits: string[]
   distance: string
-  age: number
+  age: number | null
   virginity: VirginityStatus
   genealogy: number
+  matchType?: MatchType
+  guestId?: string
+  anonymous?: boolean
 }
 
 export type MatchFilters = {
@@ -36,7 +41,7 @@ export type MatchFilters = {
   ageMax: number
 }
 
-export type AppView = 'pheno' | 'match'
+export type AppView = 'pheno' | 'match' | 'umingle'
 
 export const defaultMatchFilters: MatchFilters = {
   virginity: 'any',

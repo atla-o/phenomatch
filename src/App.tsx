@@ -4,6 +4,7 @@ import { userPhenotype as seedPhenotype } from './data/mock'
 import { fetchHealth, fetchPhenotype } from './api/client'
 import { PhenoView } from './components/PhenoView'
 import { MatchView } from './components/MatchView'
+import { UmingleView } from './components/UmingleView'
 import { NavBar } from './components/NavBar'
 import './App.css'
 
@@ -45,6 +46,9 @@ function App() {
             />
           )}
           {view === 'match' && <MatchView hasProfile={hasProfile} />}
+          {view === 'umingle' && (
+            <UmingleView phenotype={phenotype} hasProfile={hasProfile} />
+          )}
         </main>
 
         <NavBar current={view} onNavigate={setView} />

@@ -63,6 +63,7 @@ export function MatchView({ hasProfile }: Props) {
         </header>
         <div className="match__empty">
           <p>Complete your phenotype scan in Pheno to unlock matches.</p>
+          <p>For chat with no account, open Umingle.</p>
         </div>
       </section>
     )
@@ -159,7 +160,7 @@ export function MatchView({ hasProfile }: Props) {
                 >
                   <span className="match__list-code">{m.phenotype.code}</span>
                   <span className="match__list-name">{m.phenotype.name}</span>
-                  <span className="match__list-meta">{m.age} · {m.genealogy}%</span>
+                  <span className="match__list-meta">{m.age != null ? `${m.age} · ` : ''}{m.genealogy}%</span>
                   <span className="match__list-score">{m.compatibility}%</span>
                 </button>
               </li>
@@ -182,7 +183,7 @@ export function MatchView({ hasProfile }: Props) {
                 <h3 className="match-card__name">{match.phenotype.name}</h3>
                 <p className="match-card__tagline">{match.phenotype.tagline}</p>
                 <div className="match-card__meta">
-                  <span>{match.age} yrs</span>
+                  {match.age != null && <span>{match.age} yrs</span>}
                   <span>{match.distance} away</span>
                   <span>Genealogy {match.genealogy}%</span>
                   <span>{match.phenotype.genealogyLineage}</span>

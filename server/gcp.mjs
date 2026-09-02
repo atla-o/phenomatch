@@ -14,6 +14,8 @@ export const gcpConfig = {
     phenotypes: 'phenomatch_phenotypes',
     candidates: 'phenomatch_candidates',
     matchQueries: 'phenomatch_match_queries',
+    umingleGuests: 'phenomatch_umingle_guests',
+    umingleRooms: 'phenomatch_umingle_rooms',
   },
   cloudRunService: 'phenomatch-matching-api',
 }

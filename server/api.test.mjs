@@ -55,3 +55,38 @@ test('matches endpoint filters virginity and ranks clusters', async () => {
   assert.equal(body.matches[0].phenotype.id, 'north-sea-12')
   assert.equal(body.clustering.includes('genealogy'), true)
 })
+
+test('umingle join needs no account and opens phenotype chat', async () => {
+  const join = await fetch(`${base}/api/umingle/join`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  assert.equal(join.status, 200)
+  const joined = await join.json()
+  assert.equal(joined.account, 'none')
+  assert.equal(joined.matchType, 'umingle')
+  assert.equal(joined.guest.anonymous, true)
+  assert.ok(joined.guest.id)
+  assert.ok(joined.returned >= 4)
+
+  const peer = joined.matches[0]
+  const chat = await fetch(`${base}/api/umingle/chat`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: joined.guest.id, peerGuestId: peer.guestId }),
+  })
+  assert.equal(chat.status, 200)
+  const opened = await chat.json()
+  assert.equal(opened.room.peer.guestId, peer.guestId)
+
+  const send = await fetch(`${base}/api/umingle/chat/${encodeURIComponent(opened.room.id)}/messages`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: joined.guest.id, text: 'No account. Just phenotype.' }),
+  })
+  assert.equal(send.status, 200)
+  const sent = await send.json()
+  assert.equal(sent.room.messages[0].text, 'No account. Just phenotype.')
+  assert.ok(sent.room.messages.length >= 2)
+})

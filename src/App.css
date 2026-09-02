@@ -759,6 +759,165 @@
   color: var(--black);
 }
 
+/* ── Umingle ── */
+
+.umingle {
+  padding: 20px 24px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.umingle__page-header {
+  border-bottom: 2px solid var(--black);
+  padding-bottom: 12px;
+}
+
+.umingle__page-title {
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.umingle__subtitle {
+  font-size: 0.82rem;
+  margin-top: 8px;
+}
+
+.umingle__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.umingle__intro-copy {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.umingle__error {
+  font-size: 0.8rem;
+}
+
+.umingle__status {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.umingle__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.umingle-card {
+  border: 2px solid var(--black);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.umingle-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.umingle-card__anon {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.umingle-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  height: 100%;
+}
+
+.umingle-chat__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 2px solid var(--black);
+}
+
+.umingle-chat__back {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-decoration: underline;
+}
+
+.umingle-chat__name {
+  font-size: 1rem;
+}
+
+.umingle-chat__meta {
+  font-size: 0.72rem;
+  margin-top: 4px;
+}
+
+.umingle-chat__log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 280px;
+}
+
+.umingle-chat__empty {
+  font-size: 0.85rem;
+}
+
+.umingle-bubble {
+  max-width: 82%;
+  padding: 10px 12px;
+  border: 2px solid var(--black);
+  font-size: 0.88rem;
+  line-height: 1.35;
+  align-self: flex-start;
+}
+
+.umingle-bubble--mine {
+  align-self: flex-end;
+  background: var(--black);
+  color: var(--white);
+}
+
+.umingle-chat__compose {
+  border-top: 2px solid var(--black);
+  padding: 12px 20px 20px;
+}
+
+.umingle-chat__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.umingle-chat__row {
+  display: flex;
+  gap: 8px;
+}
+
+.umingle-chat__row input {
+  flex: 1;
+  border: 2px solid var(--black);
+  padding: 10px 12px;
+  font: inherit;
+  background: var(--white);
+  color: var(--black);
+}
+
 /* ── Nav bar ── */
 
 .nav-bar {
@@ -769,10 +928,10 @@
 
 .nav-bar__item {
   flex: 1;
-  padding: 14px 16px;
+  padding: 14px 8px;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-right: 1px solid var(--black);

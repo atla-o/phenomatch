@@ -13,7 +13,7 @@ npm install
 npm run cloud -- --host 0.0.0.0 --port 5173
 ```
 
-Black-and-white Pheno / Match UI. Visual traits + tribe + genealogy clustering. Match filters: virginity, genealogy, age.
+Black-and-white Pheno / Match / Umingle UI. Visual traits + tribe + genealogy clustering. Match filters: virginity, genealogy, age. Umingle is an anonymous match type: no account, phenotype chat.
 
 See [docs/cloud.md](docs/cloud.md) and [gcp/README.md](gcp/README.md).
 

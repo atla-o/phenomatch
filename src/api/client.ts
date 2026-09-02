@@ -22,11 +22,66 @@ export type MatchesResponse = {
   source: string
 }
 
+export type UmingleGuest = {
+  id: string
+  displayName: string
+  anonymous: true
+  phenotype: Phenotype
+}
+
+export type UmingleJoinResponse = {
+  guest: UmingleGuest
+  matches: Match[]
+  total: number
+  returned: number
+  matchType: 'umingle'
+  account: 'none'
+  source: string
+}
+
+export type ChatMessage = {
+  id: string
+  fromGuestId: string
+  mine: boolean
+  text: string
+  createdAt: number
+}
+
+export type UmingleRoom = {
+  id: string
+  matchType: 'umingle'
+  peer: {
+    guestId: string
+    displayName: string
+    phenotype: Phenotype
+    anonymous: boolean
+  } | null
+  messages: ChatMessage[]
+}
+
+const UMINGLE_GUEST_KEY = 'phenomatch.umingleGuestId'
+
+export function storedUmingleGuestId(): string | null {
+  try {
+    return localStorage.getItem(UMINGLE_GUEST_KEY)
+  } catch {
+    return null
+  }
+}
+
+function rememberGuestId(id: string) {
+  try {
+    localStorage.setItem(UMINGLE_GUEST_KEY, id)
+  } catch {
+    /* private mode */
+  }
+}
+
 function clientFilter(matches: Match[], filters: MatchFilters): Match[] {
   return matches.filter((m) => {
     if (filters.virginity !== 'any' && m.virginity !== filters.virginity) return false
     if (m.genealogy < filters.genealogyMin) return false
-    if (m.age < filters.ageMin || m.age > filters.ageMax) return false
+    if (m.age != null && (m.age < filters.ageMin || m.age > filters.ageMax)) return false
     return true
   })
 }
@@ -81,4 +136,46 @@ export async function fetchMatches(filters: MatchFilters = defaultMatchFilters):
       source: 'client-fallback',
     }
   }
+}
+
+export async function joinUmingle(phenotype?: Phenotype): Promise<UmingleJoinResponse> {
+  const guestId = storedUmingleGuestId()
+  const res = await fetch('/api/umingle/join', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId, phenotype }),
+  })
+  if (!res.ok) throw new Error('umingle join failed')
+  const body = (await res.json()) as UmingleJoinResponse
+  rememberGuestId(body.guest.id)
+  return body
+}
+
+export async function openUmingleChat(guestId: string, peerGuestId: string): Promise<UmingleRoom> {
+  const res = await fetch('/api/umingle/chat', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId, peerGuestId }),
+  })
+  if (!res.ok) throw new Error('umingle chat failed')
+  const body = (await res.json()) as { room: UmingleRoom }
+  return body.room
+}
+
+export async function fetchUmingleChat(roomId: string, guestId: string): Promise<UmingleRoom> {
+  const res = await fetch(`/api/umingle/chat/${encodeURIComponent(roomId)}?guestId=${encodeURIComponent(guestId)}`)
+  if (!res.ok) throw new Error('umingle chat load failed')
+  const body = (await res.json()) as { room: UmingleRoom }
+  return body.room
+}
+
+export async function sendUmingleMessage(roomId: string, guestId: string, text: string): Promise<UmingleRoom> {
+  const res = await fetch(`/api/umingle/chat/${encodeURIComponent(roomId)}/messages`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId, text }),
+  })
+  if (!res.ok) throw new Error('umingle send failed')
+  const body = (await res.json()) as { room: UmingleRoom }
+  return body.room
 }

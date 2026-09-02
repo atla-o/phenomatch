@@ -99,3 +99,20 @@ details summary::-webkit-details-marker {
   background: var(--black);
   color: var(--white);
 }
+
+.btn--solid {
+  color: var(--white);
+  border: 2px solid var(--black);
+  background: var(--black);
+  width: auto;
+  padding: 10px 16px;
+}
+
+.btn--solid:hover {
+  background: var(--white);
+  color: var(--black);
+}
+
+.btn--solid:disabled {
+  opacity: 0.5;
+}

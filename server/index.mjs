@@ -2,6 +2,7 @@ import http from 'node:http'
 import { gcpStatus, memoryDatastore, gcpConfig } from './gcp.mjs'
 import { queryMatches } from './matching.mjs'
 import { userPhenotype, matches, filterOptions, scanSteps } from './catalog.mjs'
+import { joinUmingle, listUmingleMatches, openChat, getChat, postMessage, getGuest } from './umingle.mjs'
 
 const PORT = Number(process.env.MATCH_API_PORT || process.env.PORT || 8787)
 const store = memoryDatastore({ userPhenotype, matches })
@@ -97,10 +98,84 @@ const server = http.createServer(async (req, res) => {
         total: candidates.length,
         returned: ranked.length,
         filters,
+        matchType: 'cluster',
         source: gcp.mode,
         clustering: ['visual-traits', 'tribe', 'genealogy'],
       })
       return
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/umingle/join') {
+      const body = await readJson(req)
+      const phenotype = body.phenotype || (await store.getUserPhenotype())
+      const guest = joinUmingle({ guestId: body.guestId, phenotype })
+      const ranked = listUmingleMatches(guest)
+      const gcp = await gcpStatus()
+      send(res, 200, {
+        guest: {
+          id: guest.id,
+          displayName: guest.displayName,
+          anonymous: true,
+          phenotype: guest.phenotype,
+        },
+        matches: ranked,
+        total: ranked.length,
+        returned: ranked.length,
+        matchType: 'umingle',
+        account: 'none',
+        source: gcp.mode,
+        clustering: ['visual-traits', 'tribe', 'genealogy'],
+      })
+      return
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/umingle/matches') {
+      const guestId = url.searchParams.get('guestId')
+      const guest = guestId ? getGuest(guestId) : null
+      if (!guest) {
+        send(res, 404, { error: 'guest_not_found' })
+        return
+      }
+      const ranked = listUmingleMatches(guest)
+      send(res, 200, {
+        matches: ranked,
+        total: ranked.length,
+        returned: ranked.length,
+        matchType: 'umingle',
+        account: 'none',
+      })
+      return
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/umingle/chat') {
+      const body = await readJson(req)
+      const room = openChat(body.guestId, body.peerGuestId)
+      send(res, 200, { room, matchType: 'umingle', account: 'none' })
+      return
+    }
+
+    const chatPath = url.pathname.match(/^\/api\/umingle\/chat\/([^/]+)(?:\/(messages))?$/)
+    if (chatPath) {
+      const roomId = decodeURIComponent(chatPath[1])
+      const messagesOnly = chatPath[2] === 'messages'
+
+      if (req.method === 'GET' && !messagesOnly) {
+        const guestId = url.searchParams.get('guestId')
+        const room = getChat(roomId, guestId)
+        if (!room) {
+          send(res, 404, { error: 'room_not_found' })
+          return
+        }
+        send(res, 200, { room, matchType: 'umingle' })
+        return
+      }
+
+      if (req.method === 'POST' && messagesOnly) {
+        const body = await readJson(req)
+        const room = postMessage(roomId, body.guestId, body.text)
+        send(res, 200, { room, matchType: 'umingle' })
+        return
+      }
     }
 
     send(res, 404, { error: 'not_found' })
