@@ -147,7 +147,7 @@ export function postMessage(roomId, guestId, text) {
   const peerId = room.participantIds.find((id) => id !== guestId)
   const peer = guests.get(peerId)
   const firstFromGuest = room.messages.filter((m) => m.fromGuestId === guestId).length === 1
-  if (peer?.seeded && firstFromGuest) {
+  if (peer && firstFromGuest) {
     room.messages.push({
       id: `msg-${crypto.randomUUID()}`,
       fromGuestId: peer.id,
