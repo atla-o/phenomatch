@@ -50,13 +50,23 @@ export type ChatMessage = {
 export type UmingleRoom = {
   id: string
   matchType: 'anonymous'
+  compatibility?: number | null
   peer: {
     guestId: string
     displayName: string
     phenotype: Phenotype
     anonymous: boolean
+    compatibility?: number | null
   } | null
   messages: ChatMessage[]
+}
+
+export type AnonLiveResponse = {
+  guest: UmingleGuest
+  room: UmingleRoom | null
+  matchType: 'anonymous'
+  account: 'none'
+  minCompatibility: number
 }
 
 const UMINGLE_GUEST_KEY = 'phenomatch.umingleGuestId'
@@ -149,15 +159,15 @@ export async function fetchMatches(filters: MatchFilters = defaultMatchFilters):
   }
 }
 
-export async function joinUmingle(phenotype?: Phenotype): Promise<UmingleJoinResponse> {
+export async function joinAnonLive(phenotype: Phenotype, skipPeerId?: string): Promise<AnonLiveResponse> {
   const guestId = storedUmingleGuestId()
-  const res = await fetch('/api/umingle/join', {
+  const res = await fetch('/api/umingle/live', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ guestId, phenotype }),
+    body: JSON.stringify({ guestId, phenotype, skipPeerId }),
   })
-  if (!res.ok) throw new Error('umingle join failed')
-  const body = (await res.json()) as UmingleJoinResponse
+  if (!res.ok) throw new Error('anon live failed')
+  const body = (await res.json()) as AnonLiveResponse
   rememberGuestId(body.guest.id)
   return body
 }

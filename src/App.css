@@ -468,6 +468,16 @@
   gap: 16px;
 }
 
+.match:has(.umingle-chat) {
+  padding-bottom: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.match:has(.umingle-chat) .match__categories {
+  margin: 0 24px;
+}
+
 .match__page-header {
   border-bottom: 2px solid var(--black);
   padding-bottom: 12px;

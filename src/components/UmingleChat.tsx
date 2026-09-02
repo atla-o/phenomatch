@@ -7,10 +7,10 @@ type Props = {
   room: UmingleRoom
   guestId: string
   onRoom: (room: UmingleRoom) => void
-  onBack: () => void
+  onNext: () => void
 }
 
-export function UmingleChat({ room, guestId, onRoom, onBack }: Props) {
+export function UmingleChat({ room, guestId, onRoom, onNext }: Props) {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const logRef = useRef<HTMLDivElement>(null)
@@ -42,22 +42,27 @@ export function UmingleChat({ room, guestId, onRoom, onBack }: Props) {
 
   const peerName = room.peer?.displayName ?? 'Guest'
   const peerCode = room.peer?.phenotype.code ?? ''
+  const similar = room.compatibility ?? room.peer?.compatibility
 
   return (
     <section className="umingle-chat">
       <header className="umingle-chat__header">
-        <button type="button" className="umingle-chat__back" onClick={onBack}>
-          Back
+        <button type="button" className="umingle-chat__back" onClick={onNext}>
+          Next
         </button>
         <div>
           <h3 className="umingle-chat__name">{peerName}</h3>
-          <p className="umingle-chat__meta">{peerCode} · anon match</p>
+          <p className="umingle-chat__meta">
+            {peerCode}
+            {similar != null ? ` · ${similar}% similar` : ''}
+            {' · live'}
+          </p>
         </div>
       </header>
 
       <div className="umingle-chat__log" ref={logRef}>
         {room.messages.length === 0 && (
-          <p className="umingle-chat__empty">Start the chat. This is a profile match — no account.</p>
+          <p className="umingle-chat__empty">Live chat with a similar phenotype.</p>
         )}
         {room.messages.map((message) => (
           <div

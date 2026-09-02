@@ -23,13 +23,11 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 | POST | `/api/phenotype/scan` | Simulated optical scan (no camera) |
 | POST | `/api/phenotype/gene` | Link a genealogy / gene file to the phenotype |
 | POST | `/api/matches` | Ranked data matches for filters |
-| POST | `/api/umingle/join` | Anon guest join (no account) |
-| GET | `/api/umingle/matches` | Ranked anon guests for a guest id |
-| POST | `/api/umingle/chat` | Open a phenotype chat room |
+| POST | `/api/umingle/live` | Live chat with a similar phenotype (50%+) |
 | GET | `/api/umingle/chat/:id` | Chat messages |
 | POST | `/api/umingle/chat/:id/messages` | Send a chat message |
 
-Match ranking combines visual traits, tribe, and genealogy. Data match filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon match lives under Match and requires a Pheno scan; profile match then chats without an account.
+Match ranking combines visual traits, tribe, and genealogy. Data match filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon match is a live chat with someone at 50%+ phenotype similarity.
 
 ## GCP
 

@@ -71,37 +71,25 @@ test('gene upload links genealogy on the phenotype', async () => {
   assert.match(body.phenotype.genealogyLineage, /family\.vcf/)
 })
 
-test('umingle join needs no account and opens phenotype chat', async () => {
-  const join = await fetch(`${base}/api/umingle/join`, {
+test('anon live chat connects a similar phenotype at 50%+', async () => {
+  const live = await fetch(`${base}/api/umingle/live`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({}),
   })
-  assert.equal(join.status, 200)
-  const joined = await join.json()
-  assert.equal(joined.account, 'none')
-  assert.equal(joined.matchType, 'anonymous')
-  assert.equal(joined.guest.anonymous, true)
-  assert.ok(joined.guest.id)
-  assert.ok(joined.returned >= 4)
+  assert.equal(live.status, 200)
+  const body = await live.json()
+  assert.equal(body.matchType, 'anonymous')
+  assert.ok(body.room)
+  assert.ok((body.room.compatibility ?? 0) >= 50)
+  assert.ok(body.room.messages.length >= 1)
 
-  const peer = joined.matches[0]
-  const chat = await fetch(`${base}/api/umingle/chat`, {
+  const send = await fetch(`${base}/api/umingle/chat/${encodeURIComponent(body.room.id)}/messages`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ guestId: joined.guest.id, peerGuestId: peer.guestId }),
-  })
-  assert.equal(chat.status, 200)
-  const opened = await chat.json()
-  assert.equal(opened.room.peer.guestId, peer.guestId)
-
-  const send = await fetch(`${base}/api/umingle/chat/${encodeURIComponent(opened.room.id)}/messages`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ guestId: joined.guest.id, text: 'No account. Just phenotype.' }),
+    body: JSON.stringify({ guestId: body.guest.id, text: 'Hey from a similar phenotype.' }),
   })
   assert.equal(send.status, 200)
   const sent = await send.json()
-  assert.equal(sent.room.messages[0].text, 'No account. Just phenotype.')
-  assert.ok(sent.room.messages.length >= 2)
+  assert.ok(sent.room.messages.some((m) => m.text === 'Hey from a similar phenotype.'))
 })

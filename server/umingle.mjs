@@ -1,10 +1,11 @@
 /**
- * Anonymous match: no-account phenotype matching for chat.
- * Profile match ranks guests by visual traits, tribe, and genealogy.
+ * Anon match: live chat with a similar phenotype (50%+).
  */
 
 import { rankMatches } from './matching.mjs'
 import { matches as seedCatalog } from './catalog.mjs'
+
+export const ANON_MIN_COMPAT = 50
 
 const guests = new Map()
 const rooms = new Map()
@@ -86,11 +87,15 @@ export function listUmingleMatches(guest) {
   return rankMatches(guest.phenotype, others)
 }
 
+export function similarMatches(guest) {
+  return listUmingleMatches(guest).filter((match) => match.compatibility >= ANON_MIN_COMPAT)
+}
+
 function roomKey(a, b) {
   return [a, b].sort().join('__')
 }
 
-export function openChat(guestId, peerGuestId) {
+export function openChat(guestId, peerGuestId, compatibility = null) {
   const guest = guests.get(guestId)
   const peer = guests.get(peerGuestId)
   if (!guest || !peer) {
@@ -107,11 +112,30 @@ export function openChat(guestId, peerGuestId) {
       id,
       matchType: 'anonymous',
       participantIds: [guestId, peerGuestId],
+      compatibility,
       messages: [],
     }
     rooms.set(id, room)
   }
+  if (compatibility != null) {
+    room.compatibility = compatibility
+  }
+  if (room.messages.length === 0) {
+    room.messages.push({
+      id: `msg-${crypto.randomUUID()}`,
+      fromGuestId: peer.id,
+      text: 'Hey — similar phenotype. This is a live chat.',
+      createdAt: Date.now(),
+    })
+  }
   return serializeRoom(room, guestId)
+}
+
+export function connectSimilar(guest, { skipPeerId } = {}) {
+  const ranked = similarMatches(guest).filter((match) => match.guestId !== skipPeerId)
+  const pick = ranked[0]
+  if (!pick) return null
+  return openChat(guest.id, pick.guestId, pick.compatibility)
 }
 
 export function getChat(roomId, guestId) {
@@ -146,12 +170,11 @@ export function postMessage(roomId, guestId, text) {
 
   const peerId = room.participantIds.find((id) => id !== guestId)
   const peer = guests.get(peerId)
-  const firstFromGuest = room.messages.filter((m) => m.fromGuestId === guestId).length === 1
-  if (peer && firstFromGuest) {
+  if (peer) {
     room.messages.push({
       id: `msg-${crypto.randomUUID()}`,
       fromGuestId: peer.id,
-      text: `Cluster overlap looks real. I'm ${peer.displayName} — anon profile match, same as you.`,
+      text: liveReply(peer),
       createdAt: Date.now() + 1,
     })
   }
@@ -171,8 +194,10 @@ function serializeRoom(room, guestId) {
           displayName: peer.displayName,
           phenotype: peer.phenotype,
           anonymous: true,
+          compatibility: room.compatibility ?? null,
         }
       : null,
+    compatibility: room.compatibility ?? null,
     messages: room.messages.map((m) => ({
       id: m.id,
       fromGuestId: m.fromGuestId,
@@ -185,4 +210,8 @@ function serializeRoom(room, guestId) {
 
 export function uminglePoolSize() {
   return guests.size
+}
+
+function liveReply(peer) {
+  return `Still here. ${peer.displayName} — similar phenotype.`
 }

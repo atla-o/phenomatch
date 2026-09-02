@@ -2,7 +2,7 @@ import http from 'node:http'
 import { gcpStatus, memoryDatastore, gcpConfig } from './gcp.mjs'
 import { queryMatches } from './matching.mjs'
 import { userPhenotype, matches, filterOptions, scanSteps } from './catalog.mjs'
-import { joinUmingle, listUmingleMatches, openChat, getChat, postMessage, getGuest } from './umingle.mjs'
+import { joinUmingle, listUmingleMatches, openChat, getChat, postMessage, getGuest, connectSimilar } from './umingle.mjs'
 
 const PORT = Number(process.env.MATCH_API_PORT || process.env.PORT || 8787)
 const store = memoryDatastore({ userPhenotype, matches })
@@ -144,6 +144,26 @@ const server = http.createServer(async (req, res) => {
         returned: ranked.length,
         matchType: 'anonymous',
         account: 'none',
+      })
+      return
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/umingle/live') {
+      const body = await readJson(req)
+      const phenotype = body.phenotype || (await store.getUserPhenotype())
+      const guest = joinUmingle({ guestId: body.guestId, phenotype })
+      const room = connectSimilar(guest, { skipPeerId: body.skipPeerId })
+      send(res, 200, {
+        guest: {
+          id: guest.id,
+          displayName: guest.displayName,
+          anonymous: true,
+          phenotype: guest.phenotype,
+        },
+        room,
+        matchType: 'anonymous',
+        account: 'none',
+        minCompatibility: 50,
       })
       return
     }
