@@ -1,0 +1,15 @@
+---
+description: Devo half cloud / half local process (same as Antiporn)
+alwaysApply: true
+---
+
+# Devo process
+
+Same process as Antiporn. Do not invent a different workflow.
+
+- **Cloud agents:** web app, backend, GCP, GitHub, docs.
+- **Local Mac only:** overlay, audio, camera, native client, installer, simulator.
+
+Not cloud-only. Not strictly local. A Linux cloud VM cannot drive local camera, audio, or UI.
+
+Holding: Devo. GitHub `atla-o`. GCP project `devo-holding` (org `atla-o.com`, folder `Devo`). App data is GCP, not Firebase.
