@@ -22,7 +22,16 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
 
   const handleScanComplete = (result: Phenotype) => {
     setScanning(false)
-    onScanComplete(result)
+    onScanComplete({
+      ...result,
+      geneLinked: result.geneLinked || phenotype.geneLinked,
+      geneFileName: result.geneFileName || phenotype.geneFileName,
+      genealogyLineage:
+        result.geneFileName || !phenotype.geneFileName
+          ? result.genealogyLineage
+          : phenotype.genealogyLineage,
+      genealogyLikelihood: Math.max(result.genealogyLikelihood, phenotype.genealogyLikelihood),
+    })
   }
 
   const onGeneFile = async (event: ChangeEvent<HTMLInputElement>) => {
