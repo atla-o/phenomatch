@@ -21,14 +21,15 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 | GET | `/api/filters` | Virginity, genealogy, age options |
 | GET | `/api/phenotype/me` | Current cluster profile |
 | POST | `/api/phenotype/scan` | Simulated optical scan (no camera) |
-| POST | `/api/matches` | Ranked cluster matches for filters |
+| POST | `/api/phenotype/gene` | Link a genealogy / gene file to the phenotype |
+| POST | `/api/matches` | Ranked data matches for filters |
 | POST | `/api/umingle/join` | Anonymous guest join (no account) |
 | GET | `/api/umingle/matches` | Ranked anonymous guests for a guest id |
 | POST | `/api/umingle/chat` | Open a phenotype chat room |
 | GET | `/api/umingle/chat/:id` | Chat messages |
 | POST | `/api/umingle/chat/:id/messages` | Send a chat message |
 
-Match ranking combines visual traits, tribe, and genealogy cluster. Cluster match filters are virginity, genealogy minimum, and age range. Anonymous match lives under the Match category; its profile match function skips accounts and fertility filters, then opens chat.
+Match ranking combines visual traits, tribe, and genealogy. Data match filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anonymous match lives under Match and requires a Pheno scan; profile match then chats without an account.
 
 ## GCP
 

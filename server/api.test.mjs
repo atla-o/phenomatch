@@ -54,6 +54,21 @@ test('matches endpoint filters virginity and ranks clusters', async () => {
   assert.equal(body.returned, 1)
   assert.equal(body.matches[0].phenotype.id, 'north-sea-12')
   assert.equal(body.clustering.includes('genealogy'), true)
+  assert.equal(body.matchType, 'data')
+})
+
+test('gene upload links genealogy on the phenotype', async () => {
+  const res = await fetch(`${base}/api/phenotype/gene`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ fileName: 'family.vcf' }),
+  })
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  assert.equal(body.linked, true)
+  assert.equal(body.phenotype.geneLinked, true)
+  assert.equal(body.phenotype.geneFileName, 'family.vcf')
+  assert.match(body.phenotype.genealogyLineage, /family\.vcf/)
 })
 
 test('umingle join needs no account and opens phenotype chat', async () => {

@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import type { ChangeEvent } from 'react'
 import type { Phenotype } from '../types'
+import { uploadGene } from '../api/client'
 import { ScanPanel } from './ScanPanel'
 import { PhenotypeTraits } from './PhenotypeTraits'
 
@@ -7,10 +9,14 @@ type Props = {
   phenotype: Phenotype
   hasProfile: boolean
   onScanComplete: (phenotype: Phenotype) => void
+  onGeneLinked: (phenotype: Phenotype) => void
 }
 
-export function PhenoView({ phenotype, hasProfile, onScanComplete }: Props) {
+export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked }: Props) {
   const [scanning, setScanning] = useState(false)
+  const [geneBusy, setGeneBusy] = useState(false)
+  const [geneError, setGeneError] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const startScan = () => setScanning(true)
 
@@ -19,22 +25,62 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete }: Props) {
     onScanComplete(result)
   }
 
+  const onGeneFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setGeneBusy(true)
+    setGeneError(null)
+    try {
+      const next = await uploadGene(file)
+      onGeneLinked(next)
+    } catch {
+      setGeneError('Could not link that gene file.')
+    } finally {
+      setGeneBusy(false)
+    }
+  }
+
+  const geneControl = (
+    <div className="pheno__gene">
+      <input
+        ref={fileRef}
+        className="pheno__gene-input"
+        type="file"
+        accept=".vcf,.ged,.gedcom,.txt,.csv,.fasta,.fa"
+        onChange={(event) => void onGeneFile(event)}
+      />
+      <button
+        type="button"
+        className="btn btn--outline"
+        disabled={geneBusy}
+        onClick={() => fileRef.current?.click()}
+      >
+        {geneBusy ? 'Linking genealogy…' : 'Upload gene'}
+      </button>
+      <p className="pheno__gene-hint">
+        Link a genealogy or genotype file (VCF, GEDCOM, or similar) to your cluster.
+      </p>
+      {phenotype.geneLinked && phenotype.geneFileName && (
+        <p className="pheno__gene-linked">Genealogy linked · {phenotype.geneFileName}</p>
+      )}
+      {geneError && <p className="pheno__gene-error">{geneError}</p>}
+    </div>
+  )
+
   return (
     <section className="pheno">
-      <header className="pheno__page-header">
-        <h2 className="pheno__page-title">Pheno</h2>
-      </header>
-
       {!hasProfile && !scanning && (
         <div className="pheno__intro">
           <p className="pheno__intro-copy">
             Scan visible identifiers on this Mac — melanin, eye color, facial
-            structure, and tribe — then the cloud matching API estimates your
-            genealogy cluster.
+            structure, and tribe — then the matching API estimates your
+            genealogy cluster. Upload a gene file to link genealogy.
           </p>
           <button type="button" className="btn btn--outline" onClick={startScan}>
             Scan phenotype
           </button>
+          {geneControl}
         </div>
       )}
 
@@ -80,6 +126,11 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete }: Props) {
               likelihood. Compatible matches share lineage overlap and tribal
               identification.
             </p>
+          </div>
+
+          <div className="pheno__card">
+            <h3 className="pheno__section-title">Upload gene</h3>
+            {geneControl}
           </div>
 
           <button type="button" className="btn btn--outline" onClick={startScan}>

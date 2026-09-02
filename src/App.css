@@ -63,6 +63,23 @@
   gap: 20px;
 }
 
+.pheno__gene {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pheno__gene-input {
+  display: none;
+}
+
+.pheno__gene-hint,
+.pheno__gene-linked,
+.pheno__gene-error {
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
 .pheno__page-header {
   border-bottom: 2px solid var(--black);
   padding-bottom: 12px;
@@ -476,7 +493,7 @@
 .match__categories {
   display: flex;
   gap: 0;
-  margin-top: 12px;
+  margin-top: 0;
   border: 2px solid var(--black);
 }
 
@@ -580,17 +597,24 @@
 .match__filters {
   border: 1px solid var(--black);
   padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
 }
 
 .match__filters-title {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.match__filters[open] .match__filters-title {
   border-bottom: 1px solid var(--black);
   padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+.match__filters .filter-group {
+  margin-top: 14px;
 }
 
 .filter-group {

@@ -22,18 +22,24 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
   const [guestId, setGuestId] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [matches, setMatches] = useState<Match[]>([])
-  const [source, setSource] = useState('')
   const [room, setRoom] = useState<UmingleRoom | null>(null)
+
+  if (!hasProfile) {
+    return (
+      <div className="match__empty">
+        <p>Complete your phenotype scan in Pheno to use anonymous match.</p>
+      </div>
+    )
+  }
 
   const runProfileMatch = async () => {
     setJoining(true)
     setError(null)
     try {
-      const result = await joinUmingle(hasProfile ? phenotype : undefined)
+      const result = await joinUmingle(phenotype)
       setGuestId(result.guest.id)
       setDisplayName(result.guest.displayName)
       setMatches(result.matches)
-      setSource(result.source)
       setPane('profile-match')
     } catch {
       setError('Could not run profile match. Matching API may be offline.')
@@ -75,7 +81,7 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
           >
             <span className="match-function__name">Profile match</span>
             <span className="match-function__desc">
-              Rank other guests by your phenotype profile, then chat. No signup.
+              Rank other guests by your phenotype profile, then chat. Requires a Pheno scan. No signup.
             </span>
             <span className="match-function__action">
               {joining ? 'Matching…' : 'Run profile match'}
@@ -95,7 +101,6 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
       <h3 className="anon__title">Profile match</h3>
       <p className="umingle__status">
         {displayName} · {matches.length} nearby
-        {source ? ` · ${source}` : ''}
       </p>
 
       {matches.length === 0 ? (

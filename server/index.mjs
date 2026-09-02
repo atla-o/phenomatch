@@ -76,12 +76,13 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
-    if (req.method === 'POST' && url.pathname === '/api/phenotype/scan') {
-      const phenotype = await store.getUserPhenotype()
+    if (req.method === 'POST' && url.pathname === '/api/phenotype/gene') {
+      const body = await readJson(req)
+      const phenotype = await store.linkGene({ fileName: body.fileName })
       send(res, 200, {
         phenotype,
-        mode: 'simulated-optical',
-        note: 'Camera capture stays on the local Mac. Cloud returns a simulated scan result.',
+        linked: true,
+        note: 'Gene file metadata is stored in the memory stub. Full sequence processing stays off this Linux VM.',
       })
       return
     }
@@ -98,7 +99,7 @@ const server = http.createServer(async (req, res) => {
         total: candidates.length,
         returned: ranked.length,
         filters,
-        matchType: 'cluster',
+        matchType: 'data',
         source: gcp.mode,
         clustering: ['visual-traits', 'tribe', 'genealogy'],
       })

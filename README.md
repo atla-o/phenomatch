@@ -13,7 +13,7 @@ npm install
 npm run cloud -- --host 0.0.0.0 --port 5173
 ```
 
-Black-and-white Pheno / Match UI. Match categories: cluster (virginity, genealogy, age filters) and anonymous. Anonymous match has a profile match function: no account, phenotype chat.
+Black-and-white Pheno / Match UI. Match categories: data (swipe, collapsible virginity / genealogy / age filters) and anonymous. Anonymous match requires a Pheno scan; profile match then chats without an account. Pheno can upload a gene file to link genealogy.
 
 See [docs/cloud.md](docs/cloud.md) and [gcp/README.md](gcp/README.md).
 

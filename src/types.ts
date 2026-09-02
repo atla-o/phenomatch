@@ -14,11 +14,13 @@ export type Phenotype = {
   traits: Trait[]
   genealogyLikelihood: number
   genealogyLineage: string
+  geneLinked?: boolean
+  geneFileName?: string
 }
 
 export type VirginityStatus = 'virgin' | 'non-virgin' | 'undisclosed'
 
-export type MatchType = 'cluster' | 'anonymous'
+export type MatchType = 'data' | 'anonymous'
 export type MatchCategory = MatchType
 
 export type Match = {

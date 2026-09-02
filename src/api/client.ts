@@ -107,6 +107,17 @@ export async function fetchPhenotype(): Promise<Phenotype> {
   }
 }
 
+export async function uploadGene(file: File): Promise<Phenotype> {
+  const res = await fetch('/api/phenotype/gene', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ fileName: file.name, size: file.size, mimeType: file.type }),
+  })
+  if (!res.ok) throw new Error('gene upload failed')
+  const body = (await res.json()) as { phenotype: Phenotype }
+  return body.phenotype
+}
+
 export async function runSimulatedScan(): Promise<Phenotype> {
   try {
     const res = await fetch('/api/phenotype/scan', { method: 'POST' })
