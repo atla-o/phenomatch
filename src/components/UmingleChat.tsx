@@ -51,13 +51,13 @@ export function UmingleChat({ room, guestId, onRoom, onBack }: Props) {
         </button>
         <div>
           <h3 className="umingle-chat__name">{peerName}</h3>
-          <p className="umingle-chat__meta">{peerCode} · no account</p>
+          <p className="umingle-chat__meta">{peerCode} · anonymous match</p>
         </div>
       </header>
 
       <div className="umingle-chat__log" ref={logRef}>
         {room.messages.length === 0 && (
-          <p className="umingle-chat__empty">Start the chat. Matching is phenotype-only.</p>
+          <p className="umingle-chat__empty">Start the chat. This is a profile match — no account.</p>
         )}
         {room.messages.map((message) => (
           <div

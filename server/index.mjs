@@ -121,7 +121,7 @@ const server = http.createServer(async (req, res) => {
         matches: ranked,
         total: ranked.length,
         returned: ranked.length,
-        matchType: 'umingle',
+        matchType: 'anonymous',
         account: 'none',
         source: gcp.mode,
         clustering: ['visual-traits', 'tribe', 'genealogy'],
@@ -141,7 +141,7 @@ const server = http.createServer(async (req, res) => {
         matches: ranked,
         total: ranked.length,
         returned: ranked.length,
-        matchType: 'umingle',
+        matchType: 'anonymous',
         account: 'none',
       })
       return
@@ -150,7 +150,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/umingle/chat') {
       const body = await readJson(req)
       const room = openChat(body.guestId, body.peerGuestId)
-      send(res, 200, { room, matchType: 'umingle', account: 'none' })
+      send(res, 200, { room, matchType: 'anonymous', account: 'none' })
       return
     }
 
@@ -166,14 +166,14 @@ const server = http.createServer(async (req, res) => {
           send(res, 404, { error: 'room_not_found' })
           return
         }
-        send(res, 200, { room, matchType: 'umingle' })
+        send(res, 200, { room, matchType: 'anonymous' })
         return
       }
 
       if (req.method === 'POST' && messagesOnly) {
         const body = await readJson(req)
         const room = postMessage(roomId, body.guestId, body.text)
-        send(res, 200, { room, matchType: 'umingle' })
+        send(res, 200, { room, matchType: 'anonymous' })
         return
       }
     }

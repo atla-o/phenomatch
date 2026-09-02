@@ -65,7 +65,7 @@ test('umingle join needs no account and opens phenotype chat', async () => {
   assert.equal(join.status, 200)
   const joined = await join.json()
   assert.equal(joined.account, 'none')
-  assert.equal(joined.matchType, 'umingle')
+  assert.equal(joined.matchType, 'anonymous')
   assert.equal(joined.guest.anonymous, true)
   assert.ok(joined.guest.id)
   assert.ok(joined.returned >= 4)

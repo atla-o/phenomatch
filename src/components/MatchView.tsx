@@ -1,14 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Match, MatchFilters } from '../types'
+import type { Match, MatchCategory, MatchFilters, Phenotype } from '../types'
 import { defaultMatchFilters } from '../types'
 import { ageRangeOptions, genealogyOptions } from '../data/mock'
 import { fetchMatches } from '../api/client'
 import { CompatibilityRing } from './CompatibilityRing'
 import { PhenotypeTraits } from './PhenotypeTraits'
+import { AnonymousMatch } from './AnonymousMatch'
 
 type Props = {
   hasProfile: boolean
+  phenotype: Phenotype
 }
+
+const categories: { id: MatchCategory; label: string }[] = [
+  { id: 'cluster', label: 'Cluster' },
+  { id: 'anonymous', label: 'Anonymous' },
+]
 
 const virginityLabels: Record<MatchFilters['virginity'], string> = {
   any: 'Any',
@@ -17,7 +24,39 @@ const virginityLabels: Record<MatchFilters['virginity'], string> = {
   undisclosed: 'Undisclosed',
 }
 
-export function MatchView({ hasProfile }: Props) {
+export function MatchView({ hasProfile, phenotype }: Props) {
+  const [category, setCategory] = useState<MatchCategory>('cluster')
+
+  return (
+    <section className="match">
+      <header className="match__page-header">
+        <h2 className="match__page-title">Match</h2>
+        <div className="match__categories" role="tablist" aria-label="Match category">
+          {categories.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={category === item.id}
+              className={`match__category${category === item.id ? ' match__category--active' : ''}`}
+              onClick={() => setCategory(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {category === 'anonymous' ? (
+        <AnonymousMatch phenotype={phenotype} hasProfile={hasProfile} />
+      ) : (
+        <ClusterMatch hasProfile={hasProfile} />
+      )}
+    </section>
+  )
+}
+
+function ClusterMatch({ hasProfile }: { hasProfile: boolean }) {
   const [filters, setFilters] = useState<MatchFilters>(defaultMatchFilters)
   const [matches, setMatches] = useState<Match[]>([])
   const [total, setTotal] = useState(0)
@@ -57,15 +96,10 @@ export function MatchView({ hasProfile }: Props) {
 
   if (!hasProfile) {
     return (
-      <section className="match">
-        <header className="match__page-header">
-          <h2 className="match__page-title">Match</h2>
-        </header>
-        <div className="match__empty">
-          <p>Complete your phenotype scan in Pheno to unlock matches.</p>
-          <p>For chat with no account, open Umingle.</p>
-        </div>
-      </section>
+      <div className="match__empty">
+        <p>Complete your phenotype scan in Pheno to unlock cluster matches.</p>
+        <p>Anonymous match does not need an account — open that category to use profile match.</p>
+      </div>
     )
   }
 
@@ -79,14 +113,11 @@ export function MatchView({ hasProfile }: Props) {
   }
 
   return (
-    <section className="match">
-      <header className="match__page-header">
-        <h2 className="match__page-title">Match</h2>
-        <p className="match__subtitle">
-          {loading ? 'Querying matching API…' : `${matches.length} of ${total} matches`}
-          <span className="match__source"> · {sourceLabel}</span>
-        </p>
-      </header>
+    <>
+      <p className="match__subtitle">
+        {loading ? 'Querying matching API…' : `${matches.length} of ${total} matches`}
+        <span className="match__source"> · {sourceLabel}</span>
+      </p>
 
       <div className="match__filters">
         <h3 className="match__filters-title">Filters</h3>
@@ -150,7 +181,7 @@ export function MatchView({ hasProfile }: Props) {
         </div>
       ) : (
         <>
-          <ul className="match__list" aria-label="Matches">
+          <ul className="match__list" aria-label="Cluster matches">
             {matches.map((m, i) => (
               <li key={m.phenotype.id}>
                 <button
@@ -237,6 +268,6 @@ export function MatchView({ hasProfile }: Props) {
           </div>
         </>
       )}
-    </section>
+    </>
   )
 }

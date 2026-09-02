@@ -1,6 +1,6 @@
 /**
- * Umingle: anonymous phenotype matching for chat.
- * No account. Guests are ephemeral ids in the GCP memory stub.
+ * Anonymous match: no-account phenotype matching for chat.
+ * Profile match ranks guests by visual traits, tribe, and genealogy.
  */
 
 import { rankMatches } from './matching.mjs'
@@ -39,7 +39,7 @@ function toUmingleMatch(guest) {
     age: null,
     virginity: 'undisclosed',
     genealogy: guest.genealogy,
-    matchType: 'umingle',
+    matchType: 'anonymous',
     guestId: guest.id,
     anonymous: true,
   }
@@ -105,7 +105,7 @@ export function openChat(guestId, peerGuestId) {
   if (!room) {
     room = {
       id,
-      matchType: 'umingle',
+      matchType: 'anonymous',
       participantIds: [guestId, peerGuestId],
       messages: [],
     }
@@ -151,7 +151,7 @@ export function postMessage(roomId, guestId, text) {
     room.messages.push({
       id: `msg-${crypto.randomUUID()}`,
       fromGuestId: peer.id,
-      text: `Cluster overlap looks real. I'm ${peer.displayName} — no account, same as you.`,
+      text: `Cluster overlap looks real. I'm ${peer.displayName} — anonymous profile match, same as you.`,
       createdAt: Date.now() + 1,
     })
   }
@@ -164,7 +164,7 @@ function serializeRoom(room, guestId) {
   const peer = guests.get(peerId)
   return {
     id: room.id,
-    matchType: 'umingle',
+    matchType: 'anonymous',
     peer: peer
       ? {
           guestId: peer.id,

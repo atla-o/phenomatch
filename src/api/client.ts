@@ -34,7 +34,7 @@ export type UmingleJoinResponse = {
   matches: Match[]
   total: number
   returned: number
-  matchType: 'umingle'
+  matchType: 'anonymous'
   account: 'none'
   source: string
 }
@@ -49,7 +49,7 @@ export type ChatMessage = {
 
 export type UmingleRoom = {
   id: string
-  matchType: 'umingle'
+  matchType: 'anonymous'
   peer: {
     guestId: string
     displayName: string

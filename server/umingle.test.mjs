@@ -12,7 +12,7 @@ describe('umingle', () => {
 
     const matches = listUmingleMatches(guest)
     assert.ok(matches.length >= 4)
-    assert.equal(matches.every((m) => m.matchType === 'umingle' && m.anonymous), true)
+    assert.equal(matches.every((m) => m.matchType === 'anonymous' && m.anonymous), true)
     assert.equal(matches.some((m) => m.guestId === guest.id), false)
     const scores = matches.map((m) => m.compatibility)
     const sorted = [...scores].sort((a, b) => b - a)
@@ -24,7 +24,7 @@ describe('umingle', () => {
     const peerId = listUmingleMatches(guest).find((m) => m.guestId.startsWith('guest-seed-'))?.guestId
     assert.ok(peerId)
     const room = openChat(guest.id, peerId)
-    assert.equal(room.matchType, 'umingle')
+    assert.equal(room.matchType, 'anonymous')
     assert.equal(room.peer.guestId, peerId)
     assert.equal(room.messages.length, 0)
 
