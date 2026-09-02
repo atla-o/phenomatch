@@ -1,22 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Match, MatchFilters } from '../types'
 import { defaultMatchFilters } from '../types'
 import { ageRangeOptions, genealogyOptions } from '../data/mock'
+import { fetchMatches } from '../api/client'
 import { CompatibilityRing } from './CompatibilityRing'
 import { PhenotypeTraits } from './PhenotypeTraits'
 
 type Props = {
-  matches: Match[]
   hasProfile: boolean
-}
-
-function filterMatches(matches: Match[], filters: MatchFilters): Match[] {
-  return matches.filter((m) => {
-    if (filters.virginity !== 'any' && m.virginity !== filters.virginity) return false
-    if (m.genealogy < filters.genealogyMin) return false
-    if (m.age < filters.ageMin || m.age > filters.ageMax) return false
-    return true
-  })
 }
 
 const virginityLabels: Record<MatchFilters['virginity'], string> = {
@@ -26,19 +17,42 @@ const virginityLabels: Record<MatchFilters['virginity'], string> = {
   undisclosed: 'Undisclosed',
 }
 
-export function MatchView({ matches, hasProfile }: Props) {
+export function MatchView({ hasProfile }: Props) {
   const [filters, setFilters] = useState<MatchFilters>(defaultMatchFilters)
+  const [matches, setMatches] = useState<Match[]>([])
+  const [total, setTotal] = useState(0)
+  const [source, setSource] = useState('matching-api')
+  const [loading, setLoading] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const [direction, setDirection] = useState<'left' | 'right' | null>(null)
 
-  const filtered = useMemo(() => filterMatches(matches, filters), [matches, filters])
+  useEffect(() => {
+    if (!hasProfile) return
+    let cancelled = false
+    setLoading(true)
+    void fetchMatches(filters).then((result) => {
+      if (cancelled) return
+      setMatches(result.matches)
+      setTotal(result.total)
+      setSource(result.source)
+      setActiveIndex(0)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [filters, hasProfile])
 
-  const safeIndex = filtered.length > 0 ? activeIndex % filtered.length : 0
-  const match = filtered[safeIndex]
+  const safeIndex = matches.length > 0 ? activeIndex % matches.length : 0
+  const match = matches[safeIndex]
+  const sourceLabel = useMemo(() => {
+    if (source === 'memory-stub' || source === 'credentials-present-unwired') return 'GCP memory stub'
+    if (source === 'client-fallback') return 'client fallback'
+    return source
+  }, [source])
 
   const updateFilters = (patch: Partial<MatchFilters>) => {
     setFilters((f) => ({ ...f, ...patch }))
-    setActiveIndex(0)
   }
 
   if (!hasProfile) {
@@ -55,10 +69,10 @@ export function MatchView({ matches, hasProfile }: Props) {
   }
 
   const goNext = (dir: 'left' | 'right') => {
-    if (filtered.length === 0) return
+    if (matches.length === 0) return
     setDirection(dir)
     setTimeout(() => {
-      setActiveIndex((i) => (i + 1) % filtered.length)
+      setActiveIndex((i) => (i + 1) % matches.length)
       setDirection(null)
     }, 280)
   }
@@ -68,7 +82,8 @@ export function MatchView({ matches, hasProfile }: Props) {
       <header className="match__page-header">
         <h2 className="match__page-title">Match</h2>
         <p className="match__subtitle">
-          {filtered.length} of {matches.length} matches
+          {loading ? 'Querying matching API…' : `${matches.length} of ${total} matches`}
+          <span className="match__source"> · {sourceLabel}</span>
         </p>
       </header>
 
@@ -124,14 +139,18 @@ export function MatchView({ matches, hasProfile }: Props) {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="match__empty">
+          <p>Querying matching API…</p>
+        </div>
+      ) : matches.length === 0 ? (
         <div className="match__empty">
           <p>No matches fit your current filters. Try adjusting your selection.</p>
         </div>
       ) : (
         <>
           <ul className="match__list" aria-label="Matches">
-            {filtered.map((m, i) => (
+            {matches.map((m, i) => (
               <li key={m.phenotype.id}>
                 <button
                   type="button"

@@ -39,6 +39,15 @@
   text-transform: uppercase;
 }
 
+.app__cloud-tag {
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  max-width: 42%;
+  text-align: right;
+  line-height: 1.2;
+}
+
 .app__main {
   flex: 1;
   overflow-y: auto;
@@ -451,6 +460,12 @@
   font-size: 1.5rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.match__source {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .match__subtitle {
