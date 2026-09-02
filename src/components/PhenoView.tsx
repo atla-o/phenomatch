@@ -28,8 +28,9 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete }: Props) {
       {!hasProfile && !scanning && (
         <div className="pheno__intro">
           <p className="pheno__intro-copy">
-            Cloud workspace: simulated optical pipeline for visual traits, tribe,
-            and genealogy cluster. Camera capture stays on the local Mac.
+            Scan visible identifiers on this Mac — melanin, eye color, facial
+            structure, and tribe — then the cloud matching API estimates your
+            genealogy cluster.
           </p>
           <button type="button" className="btn btn--outline" onClick={startScan}>
             Scan phenotype
