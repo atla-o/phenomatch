@@ -1,0 +1,14 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "phenomatch_candidates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "virginity", "order": "ASCENDING" },
+        { "fieldPath": "genealogy", "order": "ASCENDING" },
+        { "fieldPath": "age", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

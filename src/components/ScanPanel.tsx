@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import type { Phenotype } from '../types'
 import { scanSteps, userPhenotype, userTraits } from '../data/mock'
+import { runSimulatedScan } from '../api/client'
 
 type Props = {
-  onComplete: () => void
+  onComplete: (phenotype: Phenotype) => void
 }
 
 export function ScanPanel({ onComplete }: Props) {
@@ -14,6 +16,11 @@ export function ScanPanel({ onComplete }: Props) {
   const [detectedTraits, setDetectedTraits] = useState<typeof userTraits>([])
   const [genealogyRevealed, setGenealogyRevealed] = useState(false)
   const [phase, setPhase] = useState<'scanning' | 'complete'>('scanning')
+  const [result, setResult] = useState<Phenotype>(userPhenotype)
+  const onCompleteRef = useRef(onComplete)
+  const resultRef = useRef(result)
+  onCompleteRef.current = onComplete
+  resultRef.current = result
 
   useEffect(() => {
     let stream: MediaStream | null = null
@@ -37,12 +44,17 @@ export function ScanPanel({ onComplete }: Props) {
         }
       } catch {
         if (!cancelled) {
-          setCameraError('Camera unavailable on this device. Using optical fallback.')
+          setCameraError('Camera unavailable. Using optical fallback.')
         }
       }
     }
 
     void startCamera()
+    void runSimulatedScan().then((phenotype) => {
+      if (cancelled) return
+      resultRef.current = phenotype
+      setResult(phenotype)
+    })
 
     return () => {
       cancelled = true
@@ -64,22 +76,22 @@ export function ScanPanel({ onComplete }: Props) {
         if (next >= 100) {
           clearInterval(interval)
           setPhase('complete')
-          setTimeout(onComplete, 800)
+          window.setTimeout(() => onCompleteRef.current(resultRef.current), 800)
         }
         return next
       })
     }, 60)
 
     return () => clearInterval(interval)
-  }, [onComplete])
+  }, [])
 
   return (
     <div className="scan-panel">
       <div className="scan-panel__intro">
         <h3 className="scan-panel__heading">Phenotype scan</h3>
         <p className="scan-panel__desc">
-          Local camera capture of visible identifiers — melanin, eye color, facial
-          structure, and tribe — to estimate your genealogy cluster.
+          This Mac captures visible identifiers — melanin, eye color, facial
+          structure, and tribe. Matching scores come from the cloud API.
         </p>
         {cameraError && <p className="scan-panel__camera-note">{cameraError}</p>}
         {cameraReady && !cameraError && (
@@ -160,7 +172,7 @@ export function ScanPanel({ onComplete }: Props) {
               <span className="scan-panel__detected-check">✓</span>
               Genealogy likelihood
               <span className="scan-panel__detected-value">
-                {userPhenotype.genealogyLikelihood}%
+                {result.genealogyLikelihood}%
               </span>
             </li>
           )}

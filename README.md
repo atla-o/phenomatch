@@ -1,43 +1,25 @@
 # Phenomatch
 
-<<<<<<< HEAD
-Phenotype matching under **Devo**. Same process as Antiporn: half cloud / half local. See [AGENTS.md](./AGENTS.md).
+A Devo product. Matches people by phenotype. Revenue toward Devo's fertility program.
 
-## Split
+This GitHub repo is the **cloud workspace**: web app, matching API, GCP stubs, GitHub, docs.
 
-| Cloud agents | Local Mac |
-| --- | --- |
-| Web app, backend, GCP (`devo-holding`), GitHub, docs | Camera scan, overlay, audio, native client, installer |
+Camera, overlay, audio, native Mac, installer, and simulator stay on the local Mac agent. Do not run this product cloud-only.
 
-Not cloud-only. Not strictly local.
-
-## Local Mac (this checkout)
-
-Vite + React UI. Pheno / Match. Black and white. Visual traits + tribe + genealogy cluster. Scan uses the device camera.
+## Cloud
 
 ```bash
 npm install
-npm run dev
+npm run cloud -- --host 0.0.0.0 --port 5173
 ```
 
-Open http://localhost:5173/
+Black-and-white Pheno / Match UI. Visual traits + tribe + genealogy clustering. Match filters: virginity, genealogy, age.
 
-## Cloud / GitHub
+See [docs/cloud.md](docs/cloud.md) and [gcp/README.md](gcp/README.md).
+
+## Holding
 
 Repo: [atla-o/phenomatch](https://github.com/atla-o/phenomatch)  
+Sibling: [atla-o/antiporn](https://github.com/atla-o/antiporn) (same process)  
 Holding: [atla-o/devo](https://github.com/atla-o/devo)  
-Sibling: [atla-o/antiporn](https://github.com/atla-o/antiporn)
-=======
-A Devo product. Matches people by phenotype. Built as a revenue stream toward Devo's fertility program.
-
-Holding: [atla-o/devo](https://github.com/atla-o/devo)
-
-## Workspace
-
-Same Devo process as [Antiporn](https://github.com/atla-o/antiporn). See [AGENTS.md](AGENTS.md).
-
-- **Cloud (Cursor cloud agent):** web app, backend, GCP, GitHub, docs.
-- **Local Mac (Cursor on the machine, or Cursor My Machines):** overlay, audio, camera, native client, installer, simulator.
-
-A Linux cloud VM cannot drive local audio or UI. Do not run this product cloud-only.
->>>>>>> 618188fd9e8a22e92c4400bc008d8a199d72ad9a
+GCP: `devo-holding` (org `atla-o.com`, folder `Devo`). App data is GCP, not Firebase.

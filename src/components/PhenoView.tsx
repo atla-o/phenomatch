@@ -6,7 +6,7 @@ import { PhenotypeTraits } from './PhenotypeTraits'
 type Props = {
   phenotype: Phenotype
   hasProfile: boolean
-  onScanComplete: () => void
+  onScanComplete: (phenotype: Phenotype) => void
 }
 
 export function PhenoView({ phenotype, hasProfile, onScanComplete }: Props) {
@@ -14,9 +14,9 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete }: Props) {
 
   const startScan = () => setScanning(true)
 
-  const handleScanComplete = () => {
+  const handleScanComplete = (result: Phenotype) => {
     setScanning(false)
-    onScanComplete()
+    onScanComplete(result)
   }
 
   return (
@@ -28,8 +28,9 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete }: Props) {
       {!hasProfile && !scanning && (
         <div className="pheno__intro">
           <p className="pheno__intro-copy">
-            Scan visible identifiers — melanin, eye color, facial structure, and
-            tribe — then we estimate your genealogy cluster.
+            Scan visible identifiers on this Mac — melanin, eye color, facial
+            structure, and tribe — then the cloud matching API estimates your
+            genealogy cluster.
           </p>
           <button type="button" className="btn btn--outline" onClick={startScan}>
             Scan phenotype

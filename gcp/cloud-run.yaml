@@ -1,0 +1,24 @@
+# Stub service definition. Do not deploy from a cloud agent.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: phenomatch-matching-api
+  labels:
+    app: phenomatch
+    holding: devo
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: 'true'
+    spec:
+      containerConcurrency: 80
+      containers:
+        - image: us-central1-docker.pkg.dev/devo-holding/phenomatch/matching-api:stub
+          ports:
+            - containerPort: 8787
+          env:
+            - name: GCP_PROJECT_ID
+              value: devo-holding
+            - name: MATCH_API_PORT
+              value: '8787'
