@@ -151,7 +151,7 @@ export function postMessage(roomId, guestId, text) {
     room.messages.push({
       id: `msg-${crypto.randomUUID()}`,
       fromGuestId: peer.id,
-      text: `Cluster overlap looks real. I'm ${peer.displayName} — anonymous profile match, same as you.`,
+      text: `Cluster overlap looks real. I'm ${peer.displayName} — anon profile match, same as you.`,
       createdAt: Date.now() + 1,
     })
   }

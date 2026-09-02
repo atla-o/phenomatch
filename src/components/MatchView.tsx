@@ -14,7 +14,7 @@ type Props = {
 
 const categories: { id: MatchCategory; label: string }[] = [
   { id: 'data', label: 'Data' },
-  { id: 'anonymous', label: 'Anonymous' },
+  { id: 'anonymous', label: 'Anon' },
 ]
 
 const virginityLabels: Record<MatchFilters['virginity'], string> = {

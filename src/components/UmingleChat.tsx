@@ -51,7 +51,7 @@ export function UmingleChat({ room, guestId, onRoom, onBack }: Props) {
         </button>
         <div>
           <h3 className="umingle-chat__name">{peerName}</h3>
-          <p className="umingle-chat__meta">{peerCode} · anonymous match</p>
+          <p className="umingle-chat__meta">{peerCode} · anon match</p>
         </div>
       </header>
 

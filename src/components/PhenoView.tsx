@@ -143,7 +143,7 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
           </div>
 
           <button type="button" className="btn btn--outline" onClick={startScan}>
-            Rescan phenotype
+            Rescan type
           </button>
         </>
       )}

@@ -27,7 +27,7 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
   if (!hasProfile) {
     return (
       <div className="match__empty">
-        <p>Complete your phenotype scan in Pheno to use anonymous match.</p>
+        <p>Complete your phenotype scan in Pheno to use anon match.</p>
       </div>
     )
   }
@@ -68,7 +68,7 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
   if (pane === 'functions') {
     return (
       <div className="anon">
-        <h3 className="anon__title">Anonymous match</h3>
+        <h3 className="anon__title">Anon match</h3>
         <p className="anon__lede">No account. Guests are keyed to a phenotype cluster, not a login.</p>
 
         <div className="anon__functions">
@@ -96,7 +96,7 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
   return (
     <div className="anon">
       <button type="button" className="umingle-chat__back" onClick={() => setPane('functions')}>
-        Anonymous match
+        Anon match
       </button>
       <h3 className="anon__title">Profile match</h3>
       <p className="umingle__status">
@@ -120,7 +120,7 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
                 </div>
                 <h3 className="match-card__name">{match.phenotype.name}</h3>
                 <p className="match-card__tagline">{match.phenotype.tagline}</p>
-                <p className="umingle-card__anon">Anonymous guest · profile match</p>
+                <p className="umingle-card__anon">Anon guest · profile match</p>
                 <button
                   type="button"
                   className="btn btn--outline"
