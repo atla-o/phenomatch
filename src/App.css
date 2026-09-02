@@ -22,7 +22,7 @@
 
 .app__status-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 14px 24px 8px;
   font-size: 0.75rem;
@@ -472,6 +472,8 @@
   padding-bottom: 0;
   padding-left: 0;
   padding-right: 0;
+  flex: 1;
+  min-height: 100%;
 }
 
 .match:has(.umingle-chat) .match__categories {
@@ -992,6 +994,138 @@
   margin-top: 4px;
 }
 
+.umingle-chat--video {
+  min-height: 0;
+}
+
+.umingle-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 280px;
+  background: var(--white);
+}
+
+.umingle-remote {
+  height: 100%;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.umingle-remote__feed {
+  position: relative;
+  flex: 1;
+  min-height: 220px;
+  background: var(--white);
+  border-bottom: 2px solid var(--black);
+}
+
+.umingle-remote__silhouette {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--black);
+}
+
+.umingle-remote__silhouette svg {
+  width: 46%;
+  height: auto;
+}
+
+.umingle-remote__live {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 2px solid var(--black);
+  padding: 2px 8px;
+  background: var(--white);
+}
+
+.umingle-remote__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--black);
+  font-size: 0.72rem;
+}
+
+.umingle-self {
+  position: absolute;
+  left: 10px;
+  bottom: 58px;
+  width: 92px;
+  border: 2px solid var(--black);
+  background: var(--white);
+  overflow: hidden;
+  z-index: 2;
+}
+
+.umingle-self__frame {
+  position: relative;
+  height: 118px;
+}
+
+.umingle-self__video {
+  display: block;
+  width: 100%;
+  height: 118px;
+  object-fit: cover;
+  filter: grayscale(1);
+  transform: scaleX(-1);
+  background: var(--white);
+}
+
+.umingle-self__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--black);
+  background: var(--white);
+}
+
+.umingle-self__fallback svg {
+  width: 70%;
+  height: auto;
+}
+
+.umingle-self span {
+  display: block;
+  text-align: center;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 0;
+  border-top: 1px solid var(--black);
+}
+
+.umingle-skip {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-width: 88px;
+  padding: 12px 18px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--black);
+  color: var(--white);
+  border: 2px solid var(--black);
+}
+
+.umingle-skip:disabled {
+  opacity: 0.45;
+}
+
 .umingle-chat__log {
   flex: 1;
   overflow-y: auto;
@@ -1000,6 +1134,12 @@
   flex-direction: column;
   gap: 10px;
   min-height: 280px;
+}
+
+.umingle-chat__log--compact {
+  flex: 0 1 140px;
+  min-height: 88px;
+  max-height: 140px;
 }
 
 .umingle-chat__empty {

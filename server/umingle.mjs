@@ -1,5 +1,5 @@
 /**
- * Anon match: live chat with a similar phenotype (50%+).
+ * Anon match: live video chat (text secondary) with a similar phenotype (50%+).
  */
 
 import { rankMatches } from './matching.mjs'
@@ -124,7 +124,7 @@ export function openChat(guestId, peerGuestId, compatibility = null) {
     room.messages.push({
       id: `msg-${crypto.randomUUID()}`,
       fromGuestId: peer.id,
-      text: 'Hey — similar phenotype. This is a live chat.',
+      text: 'Hey — similar phenotype. This is a live video chat.',
       createdAt: Date.now(),
     })
   }

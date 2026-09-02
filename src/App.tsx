@@ -20,9 +20,7 @@ function App() {
     <div className="app">
       <div className="app__phone">
         <header className="app__status-bar">
-          <span aria-hidden="true">9:41</span>
           <span className="app__logo">PhenoMatch</span>
-          <span aria-hidden="true" />
         </header>
 
         <main className="app__main">

@@ -22,7 +22,7 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
       setGuestId(result.guest.id)
       setRoom(result.room)
     } catch {
-      setError('Could not start a live chat.')
+      setError('Could not start a live video chat.')
     } finally {
       setJoining(false)
     }
@@ -44,7 +44,7 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
   if (joining && !room) {
     return (
       <div className="match__empty">
-        <p>Finding someone with a similar phenotype (50%+)…</p>
+        <p>Finding a live video chat with a similar phenotype (50%+)…</p>
       </div>
     )
   }
@@ -76,7 +76,8 @@ export function AnonymousMatch({ phenotype, hasProfile }: Props) {
       room={room}
       guestId={guestId}
       onRoom={setRoom}
-      onNext={() => void connect(room.peer?.guestId)}
+      onSkip={() => void connect(room.peer?.guestId)}
+      skipping={joining}
     />
   )
 }
