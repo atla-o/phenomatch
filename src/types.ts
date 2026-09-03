@@ -1,9 +1,10 @@
 export type Trait = {
   id: string
   label: string
-  value: number
+  value?: number
   category: 'physical' | 'tribal'
   detail?: string
+  displayValue?: string
 }
 
 export type Phenotype = {

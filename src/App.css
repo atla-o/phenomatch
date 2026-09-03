@@ -111,40 +111,6 @@
   letter-spacing: 0.04em;
 }
 
-.pheno__identity-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  border: 2px solid var(--black);
-}
-
-.pheno__avatar {
-  width: 64px;
-  height: 64px;
-  background: var(--black);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.pheno__avatar-code {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.75rem;
-  color: var(--white);
-}
-
-.pheno__name {
-  font-size: 1.15rem;
-}
-
-.pheno__tagline {
-  font-size: 0.85rem;
-  margin-top: 4px;
-}
-
 .pheno__card {
   border: 1px solid var(--black);
   padding: 16px;

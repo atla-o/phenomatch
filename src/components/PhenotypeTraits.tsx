@@ -5,9 +5,16 @@ type Props = {
   compact?: boolean
 }
 
-export function traitsWithGenealogy(phenotype: Phenotype): Trait[] {
+export function visualTraits(phenotype: Phenotype): Trait[] {
   return [
-    ...phenotype.traits.filter((trait) => trait.id !== 'genealogy'),
+    {
+      id: 'type',
+      label: phenotype.name,
+      category: 'tribal',
+      displayValue: phenotype.code,
+      detail: phenotype.tagline,
+    },
+    ...phenotype.traits.filter((trait) => trait.id !== 'genealogy' && trait.id !== 'type'),
     {
       id: 'genealogy',
       label: 'Genealogy Likelihood',
@@ -25,14 +32,18 @@ export function PhenotypeTraits({ traits, compact = false }: Props) {
         <li key={trait.id} className="trait-item">
           <div className="trait-item__header">
             <span className="trait-item__label">{trait.label}</span>
-            <span className="trait-item__value">{trait.value}%</span>
+            <span className="trait-item__value">
+              {trait.displayValue ?? (trait.value != null ? `${trait.value}%` : '')}
+            </span>
           </div>
-          <div className="trait-item__bar">
-            <div
-              className={`trait-item__fill trait-item__fill--${trait.category}`}
-              style={{ width: `${trait.value}%` }}
-            />
-          </div>
+          {trait.value != null && (
+            <div className="trait-item__bar">
+              <div
+                className={`trait-item__fill trait-item__fill--${trait.category}`}
+                style={{ width: `${trait.value}%` }}
+              />
+            </div>
+          )}
           {!compact && trait.detail && (
             <span className="trait-item__detail">{trait.detail}</span>
           )}

@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react'
 import type { Phenotype } from '../types'
 import { uploadGene } from '../api/client'
 import { ScanPanel } from './ScanPanel'
-import { PhenotypeTraits, traitsWithGenealogy } from './PhenotypeTraits'
+import { PhenotypeTraits, visualTraits } from './PhenotypeTraits'
 
 type Props = {
   phenotype: Phenotype
@@ -97,19 +97,9 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
 
       {hasProfile && !scanning && (
         <>
-          <div className="pheno__identity-card">
-            <div className="pheno__avatar">
-              <span className="pheno__avatar-code">{phenotype.code}</span>
-            </div>
-            <div className="pheno__identity">
-              <h3 className="pheno__name">{phenotype.name}</h3>
-              <p className="pheno__tagline">{phenotype.tagline}</p>
-            </div>
-          </div>
-
           <div className="pheno__card">
             <h3 className="pheno__section-title">Visual traits</h3>
-            <PhenotypeTraits traits={traitsWithGenealogy(phenotype)} />
+            <PhenotypeTraits traits={visualTraits(phenotype)} />
           </div>
         </>
       )}
