@@ -1,14 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { Match, MatchFilters } from '../types'
+import { useEffect, useState } from 'react'
+import type { Match, MatchCategory, MatchFilters, Phenotype } from '../types'
 import { defaultMatchFilters } from '../types'
 import { ageRangeOptions, genealogyOptions } from '../data/mock'
 import { fetchMatches } from '../api/client'
 import { CompatibilityRing } from './CompatibilityRing'
-import { PhenotypeTraits } from './PhenotypeTraits'
+import { PhenotypeTraits, visualTraits } from './PhenotypeTraits'
+import { AnonymousMatch } from './AnonymousMatch'
 
 type Props = {
   hasProfile: boolean
+  phenotype: Phenotype
 }
+
+const categories: { id: MatchCategory; label: string }[] = [
+  { id: 'data', label: 'Data' },
+  { id: 'anonymous', label: 'Anon' },
+]
 
 const virginityLabels: Record<MatchFilters['virginity'], string> = {
   any: 'Any',
@@ -17,11 +24,101 @@ const virginityLabels: Record<MatchFilters['virginity'], string> = {
   undisclosed: 'Undisclosed',
 }
 
-export function MatchView({ hasProfile }: Props) {
+export function MatchView({ hasProfile, phenotype }: Props) {
+  const [category, setCategory] = useState<MatchCategory>('data')
+
+  return (
+    <section className="match">
+      <div className="match__categories" role="tablist" aria-label="Match category">
+        {categories.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={category === item.id}
+            className={`match__category${category === item.id ? ' match__category--active' : ''}`}
+            onClick={() => setCategory(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {category === 'anonymous' ? (
+        <AnonymousMatch phenotype={phenotype} hasProfile={hasProfile} />
+      ) : (
+        <DataMatch hasProfile={hasProfile} />
+      )}
+    </section>
+  )
+}
+
+function ClusterFilters({
+  filters,
+  updateFilters,
+}: {
+  filters: MatchFilters
+  updateFilters: (patch: Partial<MatchFilters>) => void
+}) {
+  return (
+    <details className="match__filters">
+      <summary className="match__filters-title">Filters</summary>
+
+      <div className="filter-group">
+        <span className="filter-group__label">Virginity</span>
+        <div className="filter-group__options" role="group" aria-label="Virginity filter">
+          {(['any', 'virgin', 'non-virgin', 'undisclosed'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              className={`filter-option${filters.virginity === v ? ' filter-option--active' : ''}`}
+              onClick={() => updateFilters({ virginity: v })}
+            >
+              {virginityLabels[v]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="filter-group">
+        <span className="filter-group__label">Genealogy</span>
+        <div className="filter-group__options" role="group" aria-label="Genealogy filter">
+          {genealogyOptions.map((opt) => (
+            <button
+              key={opt.label}
+              type="button"
+              className={`filter-option${filters.genealogyMin === opt.min ? ' filter-option--active' : ''}`}
+              onClick={() => updateFilters({ genealogyMin: opt.min })}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="filter-group">
+        <span className="filter-group__label">Age</span>
+        <div className="filter-group__options" role="group" aria-label="Age filter">
+          {ageRangeOptions.map((opt) => (
+            <button
+              key={opt.label}
+              type="button"
+              className={`filter-option${filters.ageMin === opt.min && filters.ageMax === opt.max ? ' filter-option--active' : ''}`}
+              onClick={() => updateFilters({ ageMin: opt.min, ageMax: opt.max })}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </details>
+  )
+}
+
+function DataMatch({ hasProfile }: { hasProfile: boolean }) {
   const [filters, setFilters] = useState<MatchFilters>(defaultMatchFilters)
   const [matches, setMatches] = useState<Match[]>([])
   const [total, setTotal] = useState(0)
-  const [source, setSource] = useState('matching-api')
   const [loading, setLoading] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const [direction, setDirection] = useState<'left' | 'right' | null>(null)
@@ -34,7 +131,6 @@ export function MatchView({ hasProfile }: Props) {
       if (cancelled) return
       setMatches(result.matches)
       setTotal(result.total)
-      setSource(result.source)
       setActiveIndex(0)
       setLoading(false)
     })
@@ -45,11 +141,6 @@ export function MatchView({ hasProfile }: Props) {
 
   const safeIndex = matches.length > 0 ? activeIndex % matches.length : 0
   const match = matches[safeIndex]
-  const sourceLabel = useMemo(() => {
-    if (source === 'memory-stub' || source === 'credentials-present-unwired') return 'GCP memory stub'
-    if (source === 'client-fallback') return 'client fallback'
-    return source
-  }, [source])
 
   const updateFilters = (patch: Partial<MatchFilters>) => {
     setFilters((f) => ({ ...f, ...patch }))
@@ -57,14 +148,9 @@ export function MatchView({ hasProfile }: Props) {
 
   if (!hasProfile) {
     return (
-      <section className="match">
-        <header className="match__page-header">
-          <h2 className="match__page-title">Match</h2>
-        </header>
-        <div className="match__empty">
-          <p>Complete your phenotype scan in Pheno to unlock matches.</p>
-        </div>
-      </section>
+      <div className="match__empty">
+        <p>Complete your phenotype scan in Pheno to unlock data matches.</p>
+      </div>
     )
   }
 
@@ -77,165 +163,123 @@ export function MatchView({ hasProfile }: Props) {
     }, 280)
   }
 
-  return (
-    <section className="match">
-      <header className="match__page-header">
-        <h2 className="match__page-title">Match</h2>
-        <p className="match__subtitle">
-          {loading ? 'Querying matching API…' : `${matches.length} of ${total} matches`}
-          <span className="match__source"> · {sourceLabel}</span>
-        </p>
-      </header>
+  const swipe = (
+    <div className="match__actions">
+      <button
+        type="button"
+        className="match-action match-action--pass"
+        onClick={() => goNext('left')}
+        aria-label="Pass on match"
+      >
+        ✕
+      </button>
+      <button
+        type="button"
+        className="match-action match-action--like"
+        onClick={() => goNext('right')}
+        aria-label="Like match"
+      >
+        ♡
+      </button>
+    </div>
+  )
 
-      <div className="match__filters">
-        <h3 className="match__filters-title">Filters</h3>
+  if (loading) {
+    return (
+      <>
+        <p className="match__subtitle">Loading matches…</p>
+        {swipe}
+        <ClusterFilters filters={filters} updateFilters={updateFilters} />
+      </>
+    )
+  }
 
-        <div className="filter-group">
-          <span className="filter-group__label">Virginity</span>
-          <div className="filter-group__options" role="group" aria-label="Virginity filter">
-            {(['any', 'virgin', 'non-virgin', 'undisclosed'] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                className={`filter-option${filters.virginity === v ? ' filter-option--active' : ''}`}
-                onClick={() => updateFilters({ virginity: v })}
-              >
-                {virginityLabels[v]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="filter-group">
-          <span className="filter-group__label">Genealogy</span>
-          <div className="filter-group__options" role="group" aria-label="Genealogy filter">
-            {genealogyOptions.map((opt) => (
-              <button
-                key={opt.label}
-                type="button"
-                className={`filter-option${filters.genealogyMin === opt.min ? ' filter-option--active' : ''}`}
-                onClick={() => updateFilters({ genealogyMin: opt.min })}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="filter-group">
-          <span className="filter-group__label">Age</span>
-          <div className="filter-group__options" role="group" aria-label="Age filter">
-            {ageRangeOptions.map((opt) => (
-              <button
-                key={opt.label}
-                type="button"
-                className={`filter-option${filters.ageMin === opt.min && filters.ageMax === opt.max ? ' filter-option--active' : ''}`}
-                onClick={() => updateFilters({ ageMin: opt.min, ageMax: opt.max })}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="match__empty">
-          <p>Querying matching API…</p>
-        </div>
-      ) : matches.length === 0 ? (
+  if (matches.length === 0) {
+    return (
+      <>
         <div className="match__empty">
           <p>No matches fit your current filters. Try adjusting your selection.</p>
         </div>
-      ) : (
-        <>
-          <ul className="match__list" aria-label="Matches">
-            {matches.map((m, i) => (
-              <li key={m.phenotype.id}>
-                <button
-                  type="button"
-                  className={`match__list-item${i === safeIndex ? ' match__list-item--active' : ''}`}
-                  onClick={() => setActiveIndex(i)}
-                >
-                  <span className="match__list-code">{m.phenotype.code}</span>
-                  <span className="match__list-name">{m.phenotype.name}</span>
-                  <span className="match__list-meta">{m.age} · {m.genealogy}%</span>
-                  <span className="match__list-score">{m.compatibility}%</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+        {swipe}
+        <ClusterFilters filters={filters} updateFilters={updateFilters} />
+      </>
+    )
+  }
 
-          {match && (
-            <div
-              className={`match-card${direction ? ` match-card--exit-${direction}` : ''}`}
-              key={match.phenotype.id}
-            >
-              <div className="match-card__top">
-                <div className="match-card__avatar">
-                  <span>{match.phenotype.code}</span>
-                </div>
-                <CompatibilityRing value={match.compatibility} />
-              </div>
+  return (
+    <>
+      <p className="match__subtitle">{matches.length} of {total} matches</p>
 
-              <div className="match-card__info">
-                <h3 className="match-card__name">{match.phenotype.name}</h3>
-                <p className="match-card__tagline">{match.phenotype.tagline}</p>
-                <div className="match-card__meta">
-                  <span>{match.age} yrs</span>
-                  <span>{match.distance} away</span>
-                  <span>Genealogy {match.genealogy}%</span>
-                  <span>{match.phenotype.genealogyLineage}</span>
-                  <span>{virginityLabels[match.virginity]}</span>
-                </div>
-              </div>
-
-              <div className="match-card__compat">
-                <div className="compat-block">
-                  <h4>Shared traits</h4>
-                  <ul>
-                    {match.sharedTraits.map((t) => (
-                      <li key={t}>{t}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="compat-block">
-                  <h4>Complementary</h4>
-                  <ul>
-                    {match.complementaryTraits.map((t) => (
-                      <li key={t}>{t}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <details className="match-card__traits">
-                <summary>Full trait breakdown</summary>
-                <PhenotypeTraits traits={match.phenotype.traits} compact />
-              </details>
+      {match && (
+        <div
+          className={`match-card${direction ? ` match-card--exit-${direction}` : ''}`}
+          key={match.phenotype.id}
+        >
+          <div className="match-card__top">
+            <div className="match-card__avatar">
+              <span>{match.phenotype.code}</span>
             </div>
-          )}
-
-          <div className="match__actions">
-            <button
-              type="button"
-              className="match-action match-action--pass"
-              onClick={() => goNext('left')}
-              aria-label="Pass on match"
-            >
-              ✕
-            </button>
-            <button
-              type="button"
-              className="match-action match-action--like"
-              onClick={() => goNext('right')}
-              aria-label="Like match"
-            >
-              ♡
-            </button>
+            <CompatibilityRing value={match.compatibility} />
           </div>
-        </>
+
+          <div className="match-card__info">
+            <h3 className="match-card__name">{match.phenotype.name}</h3>
+            <p className="match-card__tagline">{match.phenotype.tagline}</p>
+            <div className="match-card__meta">
+              {match.age != null && <span>{match.age} yrs</span>}
+              <span>{match.distance} away</span>
+              <span>Genealogy {match.genealogy}%</span>
+              <span>{match.phenotype.genealogyLineage}</span>
+              <span>{virginityLabels[match.virginity]}</span>
+            </div>
+          </div>
+
+          <div className="match-card__compat">
+            <div className="compat-block">
+              <h4>Shared traits</h4>
+              <ul>
+                {match.sharedTraits.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="compat-block">
+              <h4>Complementary</h4>
+              <ul>
+                {match.complementaryTraits.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <details className="match-card__traits">
+            <summary>Full trait breakdown</summary>
+            <PhenotypeTraits traits={visualTraits(match.phenotype)} compact />
+          </details>
+        </div>
       )}
-    </section>
+
+      {swipe}
+
+      <ClusterFilters filters={filters} updateFilters={updateFilters} />
+
+      <ul className="match__list" aria-label="Data matches">
+        {matches.map((m, i) => (
+          <li key={m.phenotype.id}>
+            <button
+              type="button"
+              className={`match__list-item${i === safeIndex ? ' match__list-item--active' : ''}`}
+              onClick={() => setActiveIndex(i)}
+            >
+              <span className="match__list-code">{m.phenotype.code}</span>
+              <span className="match__list-name">{m.phenotype.name}</span>
+              <span className="match__list-meta">{m.age != null ? `${m.age} · ` : ''}{m.genealogy}%</span>
+              <span className="match__list-score">{m.compatibility}%</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }

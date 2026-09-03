@@ -21,9 +21,13 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 | GET | `/api/filters` | Virginity, genealogy, age options |
 | GET | `/api/phenotype/me` | Current cluster profile |
 | POST | `/api/phenotype/scan` | Simulated optical scan (no camera) |
-| POST | `/api/matches` | Ranked matches for filters |
+| POST | `/api/phenotype/gene` | Link a genealogy / gene file to the phenotype |
+| POST | `/api/matches` | Ranked data matches for filters |
+| POST | `/api/umingle/live` | Live video chat with a similar phenotype (50%+) |
+| GET | `/api/umingle/chat/:id` | Chat messages |
+| POST | `/api/umingle/chat/:id/messages` | Send a chat message |
 
-Match ranking combines visual traits, tribe, and genealogy cluster. Filters are virginity, genealogy minimum, and age range.
+Match ranking combines visual traits, tribe, and genealogy. Data match filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon match is a live video chat (text secondary, skip to next) with someone at 50%+ phenotype similarity.
 
 ## GCP
 
