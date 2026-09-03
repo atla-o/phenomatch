@@ -20,7 +20,7 @@ function App() {
     <div className="app">
       <div className="app__phone">
         <header className="app__status-bar">
-          <span className="app__logo">PhenoMatch</span>
+          <span className="app__logo">o</span>
         </header>
 
         <main className="app__main">
