@@ -50,8 +50,8 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
     }
   }
 
-  const geneControl = (
-    <div className="pheno__gene">
+  return (
+    <section className="pheno">
       <input
         ref={fileRef}
         className="pheno__gene-input"
@@ -59,26 +59,30 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
         accept=".vcf,.ged,.gedcom,.txt,.csv,.fasta,.fa"
         onChange={(event) => void onGeneFile(event)}
       />
-      <button
-        type="button"
-        className="btn btn--outline"
-        disabled={geneBusy}
-        onClick={() => fileRef.current?.click()}
-      >
-        {geneBusy ? 'Linking genealogy…' : 'Upload gene'}
-      </button>
-      <p className="pheno__gene-hint">
-        Link a genealogy or genotype file (VCF, GEDCOM, or similar) to your cluster.
-      </p>
+      <div className="pheno__actions" role="toolbar" aria-label="Pheno actions">
+        <button
+          type="button"
+          className={`pheno__action${geneBusy ? ' pheno__action--active' : ''}`}
+          disabled={geneBusy}
+          onClick={() => fileRef.current?.click()}
+        >
+          {geneBusy ? 'Linking…' : 'Upload gene'}
+        </button>
+        <button
+          type="button"
+          className={`pheno__action${scanning ? ' pheno__action--active' : ''}`}
+          disabled={scanning}
+          onClick={startScan}
+        >
+          Rescan type
+        </button>
+      </div>
+
       {phenotype.geneLinked && phenotype.geneFileName && (
         <p className="pheno__gene-linked">Genealogy linked · {phenotype.geneFileName}</p>
       )}
       {geneError && <p className="pheno__gene-error">{geneError}</p>}
-    </div>
-  )
 
-  return (
-    <section className="pheno">
       {!hasProfile && !scanning && (
         <div className="pheno__intro">
           <p className="pheno__intro-copy">
@@ -86,10 +90,6 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
             structure, tribe, and genealogy likelihood. Upload a gene file to
             link genealogy.
           </p>
-          <button type="button" className="btn btn--outline" onClick={startScan}>
-            Scan phenotype
-          </button>
-          {geneControl}
         </div>
       )}
 
@@ -111,15 +111,6 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
             <h3 className="pheno__section-title">Visual traits</h3>
             <PhenotypeTraits traits={traitsWithGenealogy(phenotype)} />
           </div>
-
-          <div className="pheno__card">
-            <h3 className="pheno__section-title">Upload gene</h3>
-            {geneControl}
-          </div>
-
-          <button type="button" className="btn btn--outline" onClick={startScan}>
-            Rescan type
-          </button>
         </>
       )}
     </section>

@@ -63,17 +63,36 @@
   gap: 20px;
 }
 
-.pheno__gene {
+.pheno__actions {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  gap: 0;
+  border: 2px solid var(--black);
+}
+
+.pheno__action {
+  flex: 1;
+  padding: 10px 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-right: 1px solid var(--black);
+}
+
+.pheno__action:last-child {
+  border-right: none;
+}
+
+.pheno__action--active {
+  background: var(--black);
+  color: var(--white);
 }
 
 .pheno__gene-input {
   display: none;
 }
 
-.pheno__gene-hint,
 .pheno__gene-linked,
 .pheno__gene-error {
   font-size: 0.78rem;
