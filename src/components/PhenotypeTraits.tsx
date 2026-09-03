@@ -1,8 +1,21 @@
-import type { Trait } from '../types'
+import type { Phenotype, Trait } from '../types'
 
 type Props = {
   traits: Trait[]
   compact?: boolean
+}
+
+export function traitsWithGenealogy(phenotype: Phenotype): Trait[] {
+  return [
+    ...phenotype.traits.filter((trait) => trait.id !== 'genealogy'),
+    {
+      id: 'genealogy',
+      label: 'Genealogy Likelihood',
+      value: phenotype.genealogyLikelihood,
+      category: 'physical',
+      detail: phenotype.genealogyLineage,
+    },
+  ]
 }
 
 export function PhenotypeTraits({ traits, compact = false }: Props) {

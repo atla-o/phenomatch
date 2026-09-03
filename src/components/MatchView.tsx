@@ -4,7 +4,7 @@ import { defaultMatchFilters } from '../types'
 import { ageRangeOptions, genealogyOptions } from '../data/mock'
 import { fetchMatches } from '../api/client'
 import { CompatibilityRing } from './CompatibilityRing'
-import { PhenotypeTraits } from './PhenotypeTraits'
+import { PhenotypeTraits, traitsWithGenealogy } from './PhenotypeTraits'
 import { AnonymousMatch } from './AnonymousMatch'
 
 type Props = {
@@ -255,7 +255,7 @@ function DataMatch({ hasProfile }: { hasProfile: boolean }) {
 
           <details className="match-card__traits">
             <summary>Full trait breakdown</summary>
-            <PhenotypeTraits traits={match.phenotype.traits} compact />
+            <PhenotypeTraits traits={traitsWithGenealogy(match.phenotype)} compact />
           </details>
         </div>
       )}

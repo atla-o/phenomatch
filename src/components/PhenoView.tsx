@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react'
 import type { Phenotype } from '../types'
 import { uploadGene } from '../api/client'
 import { ScanPanel } from './ScanPanel'
-import { PhenotypeTraits } from './PhenotypeTraits'
+import { PhenotypeTraits, traitsWithGenealogy } from './PhenotypeTraits'
 
 type Props = {
   phenotype: Phenotype
@@ -83,8 +83,8 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
         <div className="pheno__intro">
           <p className="pheno__intro-copy">
             Scan visible identifiers on this Mac — melanin, eye color, facial
-            structure, and tribe — then the matching API estimates your
-            genealogy cluster. Upload a gene file to link genealogy.
+            structure, tribe, and genealogy likelihood. Upload a gene file to
+            link genealogy.
           </p>
           <button type="button" className="btn btn--outline" onClick={startScan}>
             Scan phenotype
@@ -108,33 +108,8 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
           </div>
 
           <div className="pheno__card">
-            <h3 className="pheno__section-title">Genealogy likelihood</h3>
-            <div className="genealogy-score">
-              <span className="genealogy-score__value">{phenotype.genealogyLikelihood}%</span>
-              <div className="genealogy-score__bar">
-                <div
-                  className="genealogy-score__fill"
-                  style={{ width: `${phenotype.genealogyLikelihood}%` }}
-                />
-              </div>
-            </div>
-            <p className="genealogy-score__lineage">{phenotype.genealogyLineage}</p>
-          </div>
-
-          <div className="pheno__card">
             <h3 className="pheno__section-title">Visual traits</h3>
-            <PhenotypeTraits traits={phenotype.traits} />
-          </div>
-
-          <div className="pheno__card">
-            <h3 className="pheno__section-title">Genealogy cluster</h3>
-            <p className="pheno__insight">
-              Matching is based on genealogy, not a named phenotype type. Your
-              visual traits — including tribal markers — place you in the{' '}
-              {phenotype.name} cluster at {phenotype.genealogyLikelihood}%
-              likelihood. Compatible matches share lineage overlap and tribal
-              identification.
-            </p>
+            <PhenotypeTraits traits={traitsWithGenealogy(phenotype)} />
           </div>
 
           <div className="pheno__card">

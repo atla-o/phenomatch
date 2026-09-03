@@ -139,11 +139,6 @@
   padding-bottom: 8px;
 }
 
-.pheno__insight {
-  font-size: 0.9rem;
-  line-height: 1.65;
-}
-
 .pheno__intro {
   display: flex;
   flex-direction: column;
@@ -155,36 +150,6 @@
   line-height: 1.6;
   border: 1px solid var(--black);
   padding: 16px;
-}
-
-.genealogy-score {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.genealogy-score__value {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 2rem;
-  line-height: 1;
-}
-
-.genealogy-score__bar {
-  height: 10px;
-  border: 1px solid var(--black);
-  overflow: hidden;
-}
-
-.genealogy-score__fill {
-  height: 100%;
-  background: var(--black);
-}
-
-.genealogy-score__lineage {
-  font-size: 0.85rem;
-  line-height: 1.5;
-  margin-top: 4px;
 }
 
 /* ── Scan panel (inside pheno) ── */
