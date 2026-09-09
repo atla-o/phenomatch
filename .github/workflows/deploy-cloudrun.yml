@@ -43,9 +43,14 @@ jobs:
       - name: Require GCP auth configuration
         env:
           GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          GCP_WIF_SERVICE_ACCOUNT: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
           if [ -n "${GCP_WIF_PROVIDER}" ]; then
+            if [ -z "${GCP_WIF_SERVICE_ACCOUNT}" ]; then
+              echo "::error::GCP_WIF_PROVIDER is set but GCP_WIF_SERVICE_ACCOUNT is empty. Set both repository variables (see README.md Production)."
+              exit 1
+            fi
             echo "Auth: Workload Identity Federation (GCP_WIF_PROVIDER)."
           elif [ -n "${GCP_SA_KEY}" ]; then
             echo "Auth: service account key secret GCP_SA_KEY (fallback)."
