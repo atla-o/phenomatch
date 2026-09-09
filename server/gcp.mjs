@@ -14,6 +14,8 @@ export const gcpConfig = {
     phenotypes: 'phenomatch_phenotypes',
     candidates: 'phenomatch_candidates',
     matchQueries: 'phenomatch_match_queries',
+    umingleGuests: 'phenomatch_umingle_guests',
+    geneUploads: 'phenomatch_gene_uploads',
   },
   cloudRunService: 'phenomatch-matching-api',
 }
@@ -39,9 +41,26 @@ export async function gcpStatus() {
 
 /** In-memory stand-in for Firestore reads. Replace with @google-cloud/firestore later. */
 export function memoryDatastore(catalog) {
+  let userPhenotype = catalog.userPhenotype
   return {
     async getUserPhenotype() {
-      return catalog.userPhenotype
+      return userPhenotype
+    },
+    async linkGene({ fileName }) {
+      const name = String(fileName || '').trim()
+      if (!name) {
+        throw new Error('gene_file_required')
+      }
+      userPhenotype = {
+        ...userPhenotype,
+        geneLinked: true,
+        geneFileName: name,
+        genealogyLikelihood: Math.min(99, (userPhenotype.genealogyLikelihood ?? 0) + 8),
+        genealogyLineage: userPhenotype.genealogyLineage.includes(name)
+          ? userPhenotype.genealogyLineage
+          : `${userPhenotype.genealogyLineage} · linked ${name}`,
+      }
+      return userPhenotype
     },
     async listCandidates() {
       return catalog.matches

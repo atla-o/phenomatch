@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Phenotype } from '../types'
-import { scanSteps, userPhenotype, userTraits } from '../data/mock'
+import { scanSteps, userPhenotype } from '../data/mock'
 import { runSimulatedScan } from '../api/client'
+import { visualTraits } from './PhenotypeTraits'
 
 type Props = {
   onComplete: (phenotype: Phenotype) => void
@@ -13,8 +14,7 @@ export function ScanPanel({ onComplete }: Props) {
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [stepIndex, setStepIndex] = useState(0)
-  const [detectedTraits, setDetectedTraits] = useState<typeof userTraits>([])
-  const [genealogyRevealed, setGenealogyRevealed] = useState(false)
+  const [detectedTraits, setDetectedTraits] = useState<ReturnType<typeof visualTraits>>([])
   const [phase, setPhase] = useState<'scanning' | 'complete'>('scanning')
   const [result, setResult] = useState<Phenotype>(userPhenotype)
   const onCompleteRef = useRef(onComplete)
@@ -69,9 +69,9 @@ export function ScanPanel({ onComplete }: Props) {
         const newStep = Math.floor((next / 100) * scanSteps.length)
         setStepIndex(Math.min(newStep, scanSteps.length - 1))
 
-        const traitCount = Math.floor((next / 100) * userTraits.length)
-        setDetectedTraits(userTraits.slice(0, traitCount))
-        setGenealogyRevealed(next >= 88)
+        const visual = visualTraits(resultRef.current)
+        const traitCount = Math.floor((next / 100) * visual.length)
+        setDetectedTraits(visual.slice(0, traitCount))
 
         if (next >= 100) {
           clearInterval(interval)
@@ -164,18 +164,11 @@ export function ScanPanel({ onComplete }: Props) {
             <li key={trait.id} className="scan-panel__detected-item">
               <span className="scan-panel__detected-check">✓</span>
               {trait.label}
-              <span className="scan-panel__detected-value">{trait.value}%</span>
-            </li>
-          ))}
-          {genealogyRevealed && (
-            <li className="scan-panel__detected-item">
-              <span className="scan-panel__detected-check">✓</span>
-              Genealogy likelihood
               <span className="scan-panel__detected-value">
-                {result.genealogyLikelihood}%
+                {trait.displayValue ?? (trait.value != null ? `${trait.value}%` : '')}
               </span>
             </li>
-          )}
+          ))}
         </ul>
       )}
     </div>

@@ -54,4 +54,42 @@ test('matches endpoint filters virginity and ranks clusters', async () => {
   assert.equal(body.returned, 1)
   assert.equal(body.matches[0].phenotype.id, 'north-sea-12')
   assert.equal(body.clustering.includes('genealogy'), true)
+  assert.equal(body.matchType, 'data')
+})
+
+test('gene upload links genealogy on the phenotype', async () => {
+  const res = await fetch(`${base}/api/phenotype/gene`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ fileName: 'family.vcf' }),
+  })
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  assert.equal(body.linked, true)
+  assert.equal(body.phenotype.geneLinked, true)
+  assert.equal(body.phenotype.geneFileName, 'family.vcf')
+  assert.match(body.phenotype.genealogyLineage, /family\.vcf/)
+})
+
+test('anon live chat connects a similar phenotype at 50%+', async () => {
+  const live = await fetch(`${base}/api/umingle/live`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  assert.equal(live.status, 200)
+  const body = await live.json()
+  assert.equal(body.matchType, 'anonymous')
+  assert.ok(body.room)
+  assert.ok((body.room.compatibility ?? 0) >= 50)
+  assert.ok(body.room.messages.length >= 1)
+
+  const send = await fetch(`${base}/api/umingle/chat/${encodeURIComponent(body.room.id)}/messages`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: body.guest.id, text: 'Hey from a similar phenotype.' }),
+  })
+  assert.equal(send.status, 200)
+  const sent = await send.json()
+  assert.ok(sent.room.messages.some((m) => m.text === 'Hey from a similar phenotype.'))
 })

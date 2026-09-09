@@ -8,6 +8,13 @@
         { "fieldPath": "genealogy", "order": "ASCENDING" },
         { "fieldPath": "age", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "phenomatch_umingle_guests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "joinedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

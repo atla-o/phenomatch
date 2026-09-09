@@ -1,9 +1,10 @@
 export type Trait = {
   id: string
   label: string
-  value: number
+  value?: number
   category: 'physical' | 'tribal'
   detail?: string
+  displayValue?: string
 }
 
 export type Phenotype = {
@@ -14,9 +15,14 @@ export type Phenotype = {
   traits: Trait[]
   genealogyLikelihood: number
   genealogyLineage: string
+  geneLinked?: boolean
+  geneFileName?: string
 }
 
 export type VirginityStatus = 'virgin' | 'non-virgin' | 'undisclosed'
+
+export type MatchType = 'data' | 'anonymous'
+export type MatchCategory = MatchType
 
 export type Match = {
   phenotype: Phenotype
@@ -24,9 +30,12 @@ export type Match = {
   sharedTraits: string[]
   complementaryTraits: string[]
   distance: string
-  age: number
+  age: number | null
   virginity: VirginityStatus
   genealogy: number
+  matchType?: MatchType
+  guestId?: string
+  anonymous?: boolean
 }
 
 export type MatchFilters = {
