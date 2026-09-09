@@ -1,0 +1,15 @@
+# Cloud Run `gcloud run deploy --source .` upload.
+# Keep the production Dockerfile context; drop VCS, CI, and local junk.
+
+.gcloudignore
+.git
+.github
+.cursor
+.vscode
+.idea
+node_modules
+dist
+coverage
+*.log
+
+#!include:.gitignore

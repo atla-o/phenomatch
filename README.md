@@ -19,12 +19,53 @@ See [docs/cloud.md](docs/cloud.md) and [gcp/README.md](gcp/README.md).
 
 ## Production (Cloud Run)
 
-Public host: [https://phenomatch.devoutshaman.com](https://phenomatch.devoutshaman.com). GCP Cloud Run service `phenomatch-web` in project `devo-holding`, region `us-west1`. Cloudflare is **DNS-only** (grey cloud) — no Workers, no orange-cloud proxy.
+Public host: [https://phenomatch.devoutshaman.com](https://phenomatch.devoutshaman.com). GCP Cloud Run service `phenomatch-web` in project `devo-holding`, region `us-west1`. Cloudflare is **DNS-only** (grey cloud) to `ghs.googlehosted.com` — no Workers, no orange-cloud proxy.
+
+**Push or merge to `main` updates this host.** There is no separate beta host. Do not deploy to GCP from a cloud agent; GitHub Actions on `main` is the path.
 
 The production image runs `npm ci && npm run build`, then the Node API in `server/` serves `/api/*` and the Vite `dist/` assets on `0.0.0.0:$PORT` (Cloud Run default `8080`). Firestore and secrets are not required to boot a public demo; the in-memory catalog stub is the default.
 
+### Auto-deploy
+
+[`.github/workflows/deploy-cloudrun.yml`](.github/workflows/deploy-cloudrun.yml) runs on push to `main` (and `workflow_dispatch`) and deploys:
+
 ```bash
-gcloud run deploy phenomatch-web --source . --project=devo-holding --region=us-west1 --allow-unauthenticated
+gcloud run deploy phenomatch-web --source . --project=devo-holding --region=us-west1
+```
+
+Do **not** pass `--allow-unauthenticated`. Org policy blocks `allUsers` IAM.
+
+A short [`cloudbuild.yaml`](cloudbuild.yaml) is included for a future Cloud Build GitHub trigger (same service, region, project). GitHub Actions is the primary path.
+
+### One-time setup (Devo operator: `account@atla-o.com`)
+
+Fill in placeholders. Do not invent credentials.
+
+**GitHub Actions auth** — set these on `atla-o/phenomatch` (Settings → Secrets and variables → Actions) before the first auto-deploy:
+
+| Name | Where | Placeholder |
+| --- | --- | --- |
+| `GCP_WIF_PROVIDER` | repository **variable** (preferred) | `projects/PROJECT_NUMBER_PLACEHOLDER/locations/global/workloadIdentityPools/github-pool/providers/github-provider` |
+| `GCP_WIF_SERVICE_ACCOUNT` | repository **variable** (preferred) | `phenomatch-github-deploy@devo-holding.iam.gserviceaccount.com` |
+| `GCP_SA_KEY` | repository **secret** (fallback) | JSON key for a deploy service account. Used only when `GCP_WIF_PROVIDER` is unset. Prefer WIF. |
+
+Replace `PROJECT_NUMBER_PLACEHOLDER` with the real `devo-holding` project number (`gcloud projects describe devo-holding --format='value(projectNumber)'`). WIF bootstrap commands and IAM roles are in [gcp/README.md](gcp/README.md).
+
+**Public access** — after the first deploy of a new service, disable the invoker IAM check (already true on the live `phenomatch-web` service):
+
+```bash
+gcloud run services update phenomatch-web \
+  --project=devo-holding \
+  --region=us-west1 \
+  --invoker-iam-check=disabled
+```
+
+Equivalent: annotation `run.googleapis.com/invoker-iam-disabled=true`, or `--no-invoker-iam-check`. Later deploys keep this setting unless you re-enable the check.
+
+### Manual deploy
+
+```bash
+gcloud run deploy phenomatch-web --source . --project=devo-holding --region=us-west1
 ```
 
 Optional env (safe defaults for a public demo):

@@ -1,0 +1,54 @@
+# Future Cloud Build GitHub trigger (secondary to GitHub Actions).
+# Do not add --allow-unauthenticated: org policy blocks allUsers IAM.
+# Public access on the live service uses invoker IAM disabled
+# (run.googleapis.com/invoker-iam-disabled=true / --invoker-iam-check=disabled).
+#
+# Service: phenomatch-web
+# Project: devo-holding
+# Region: us-west1
+# Image: us-west1-docker.pkg.dev/devo-holding/phenomatch/web
+
+substitutions:
+  _SERVICE: phenomatch-web
+  _REGION: us-west1
+  _AR_REPO: phenomatch
+  _IMAGE: web
+
+timeout: 1200s
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: build
+    args:
+      - build
+      - -t
+      - us-west1-docker.pkg.dev/devo-holding/${_AR_REPO}/${_IMAGE}:$COMMIT_SHA
+      - -t
+      - us-west1-docker.pkg.dev/devo-holding/${_AR_REPO}/${_IMAGE}:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-sha
+    args:
+      - push
+      - us-west1-docker.pkg.dev/devo-holding/${_AR_REPO}/${_IMAGE}:$COMMIT_SHA
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-latest
+    args:
+      - push
+      - us-west1-docker.pkg.dev/devo-holding/${_AR_REPO}/${_IMAGE}:latest
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=us-west1-docker.pkg.dev/devo-holding/${_AR_REPO}/${_IMAGE}:$COMMIT_SHA
+      - --region=${_REGION}
+      - --project=devo-holding
+      - --quiet
