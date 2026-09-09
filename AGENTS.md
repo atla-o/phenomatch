@@ -29,5 +29,7 @@ This GitHub repo is the cloud workspace. Cloud agents clone `atla-o/phenomatch` 
 - Cloud start: `npm run cloud -- --host 0.0.0.0 --port 5173` (Vite + matching API).
 - Matching API: `http://127.0.0.1:8787/api/health` (proxied from `/api` on the Vite server).
 - Tests: `npm test`. Build check: `npm run build`.
+- Production image: `Dockerfile` builds the Vite UI and serves it from `server/` on `0.0.0.0:$PORT`. Do not deploy to GCP from a cloud agent.
+- Public host: `https://phenomatch.devoutshaman.com` on Cloud Run `phenomatch-web` (`devo-holding`, `us-west1`). Cloudflare DNS-only, no Workers.
 - Do not implement camera, overlay, audio, native Mac, or installer in cloud. Those stay on the local Mac agent.
 - App data belongs in GCP project `devo-holding`, not Firebase. Use `server/gcp.mjs` and `gcp/` stubs until credentials exist.

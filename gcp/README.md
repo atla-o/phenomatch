@@ -7,7 +7,7 @@ This folder is documentation and deploy *shape* only. Cloud agents must not appl
 | Resource | Stub |
 | --- | --- |
 | Project | `devo-holding` |
-| Cloud Run | `phenomatch-matching-api` in `us-central1` — see `cloud-run.yaml` |
+| Cloud Run | `phenomatch-web` in `us-west1` — public host `phenomatch.devoutshaman.com` (Cloudflare DNS-only, no Workers). See `cloud-run.yaml` |
 | Firestore | collections `phenomatch_phenotypes`, `phenomatch_candidates`, `phenomatch_match_queries`, `phenomatch_umingle_guests`, `phenomatch_umingle_rooms`, `phenomatch_gene_uploads` |
 | Runtime | Matching API (`server/index.mjs`) uses an in-memory catalog until credentials exist |
 

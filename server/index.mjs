@@ -3,8 +3,10 @@ import { gcpStatus, memoryDatastore, gcpConfig } from './gcp.mjs'
 import { queryMatches } from './matching.mjs'
 import { userPhenotype, matches, filterOptions, scanSteps } from './catalog.mjs'
 import { joinUmingle, listUmingleMatches, openChat, getChat, postMessage, getGuest, connectSimilar } from './umingle.mjs'
+import { hasStaticUi, serveStatic } from './static.mjs'
 
-const PORT = Number(process.env.MATCH_API_PORT || process.env.PORT || 8787)
+const PORT = Number(process.env.MATCH_API_PORT || process.env.PORT || 8080)
+const HOST = process.env.HOST || '0.0.0.0'
 const store = memoryDatastore({ userPhenotype, matches })
 
 function send(res, status, body) {
@@ -55,7 +57,8 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/health') {
       send(res, 200, {
         ok: true,
-        service: 'phenomatch-matching-api',
+        service: 'phenomatch-web',
+        ui: hasStaticUi(),
         gcp: await gcpStatus(),
       })
       return
@@ -199,12 +202,16 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    if (!url.pathname.startsWith('/api') && serveStatic(req, res, url.pathname)) {
+      return
+    }
+
     send(res, 404, { error: 'not_found' })
   } catch (error) {
     send(res, 400, { error: 'bad_request', message: String(error.message || error) })
   }
 })
 
-server.listen(PORT, '0.0.0.0', () => {
-  process.stdout.write(`phenomatch matching API on :${PORT}\n`)
+server.listen(PORT, HOST, () => {
+  process.stdout.write(`phenomatch-web on ${HOST}:${PORT}\n`)
 })

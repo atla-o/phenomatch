@@ -1,8 +1,10 @@
 # Stub service definition. Do not deploy from a cloud agent.
+# Operator one-liner lives in README.md:
+# gcloud run deploy phenomatch-web --source . --project=devo-holding --region=us-west1 --allow-unauthenticated
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: phenomatch-matching-api
+  name: phenomatch-web
   labels:
     app: phenomatch
     holding: devo
@@ -14,11 +16,17 @@ spec:
     spec:
       containerConcurrency: 80
       containers:
-        - image: us-central1-docker.pkg.dev/devo-holding/phenomatch/matching-api:stub
+        - image: us-west1-docker.pkg.dev/devo-holding/phenomatch/web:latest
           ports:
-            - containerPort: 8787
+            - containerPort: 8080
           env:
             - name: GCP_PROJECT_ID
               value: devo-holding
-            - name: MATCH_API_PORT
-              value: '8787'
+            - name: GCP_REGION
+              value: us-west1
+            - name: CLOUD_RUN_SERVICE
+              value: phenomatch-web
+            - name: PORT
+              value: '8080'
+            - name: HOST
+              value: 0.0.0.0
