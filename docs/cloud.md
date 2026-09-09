@@ -31,11 +31,15 @@ Match ranking combines visual traits, tribe, and genealogy. Data match filters a
 
 ## Production
 
-Public host: https://phenomatch.devoutshaman.com on GCP Cloud Run (`phenomatch-web`, project `devo-holding`, region `us-west1`). Cloudflare is DNS-only — no Workers.
+Public host: https://phenomatch.devoutshaman.com on GCP Cloud Run (`phenomatch-web`, project `devo-holding`, region `us-west1`). Cloudflare is DNS-only (grey cloud to `ghs.googlehosted.com`) — no Workers.
+
+**Push or merge to `main` updates this host.** There is no separate beta host. GitHub Actions (`.github/workflows/deploy-cloudrun.yml`) is the deploy path; cloud agents must not deploy from this checkout.
 
 ```bash
-gcloud run deploy phenomatch-web --source . --project=devo-holding --region=us-west1 --allow-unauthenticated
+gcloud run deploy phenomatch-web --source . --project=devo-holding --region=us-west1
 ```
+
+Do not pass `--allow-unauthenticated` (org policy blocks `allUsers`). Public access uses invoker IAM disabled (`run.googleapis.com/invoker-iam-disabled=true` / `--invoker-iam-check=disabled`), already true on the live service. See [README.md](../README.md) and [gcp/README.md](../gcp/README.md).
 
 The container listens on `0.0.0.0:$PORT` and serves the built UI plus `/api`. Firestore/secrets are optional; the memory stub is the public-demo default. See the env table in [README.md](../README.md).
 

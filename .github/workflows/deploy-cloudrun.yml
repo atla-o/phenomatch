@@ -1,0 +1,86 @@
+# Deploy Phenomatch to Cloud Run on push to main.
+# Public host: https://phenomatch.devoutshaman.com
+# Service: phenomatch-web  Project: devo-holding  Region: us-west1
+#
+# Do NOT pass --allow-unauthenticated. Org policy blocks allUsers IAM.
+# Public access on the live service uses invoker IAM disabled
+# (run.googleapis.com/invoker-iam-disabled=true / --invoker-iam-check=disabled).
+#
+# Auth placeholders (Devo operator: account@atla-o.com) — see README.md:
+#   vars.GCP_WIF_PROVIDER          WIF provider resource name
+#   vars.GCP_WIF_SERVICE_ACCOUNT   deploy SA email (optional for Direct WIF)
+#   secrets.GCP_SA_KEY             fallback SA JSON key (use only if WIF is unset)
+
+name: Deploy Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: phenomatch-web-us-west1
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT: devo-holding
+  GCP_REGION: us-west1
+  CLOUD_RUN_SERVICE: phenomatch-web
+
+jobs:
+  deploy:
+    name: Deploy phenomatch-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require GCP auth configuration
+        env:
+          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          GCP_WIF_SERVICE_ACCOUNT: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          if [ -n "${GCP_WIF_PROVIDER}" ]; then
+            if [ -z "${GCP_WIF_SERVICE_ACCOUNT}" ]; then
+              echo "::error::GCP_WIF_PROVIDER is set but GCP_WIF_SERVICE_ACCOUNT is empty. Set both repository variables (see README.md Production)."
+              exit 1
+            fi
+            echo "Auth: Workload Identity Federation (GCP_WIF_PROVIDER)."
+          elif [ -n "${GCP_SA_KEY}" ]; then
+            echo "Auth: service account key secret GCP_SA_KEY (fallback)."
+          else
+            echo "::error::No GCP credentials. Devo operator account@atla-o.com must set GitHub Actions variables GCP_WIF_PROVIDER and GCP_WIF_SERVICE_ACCOUNT (preferred), or secret GCP_SA_KEY. See README.md Production."
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        if: ${{ vars.GCP_WIF_PROVIDER != '' }}
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+
+      - name: Authenticate to Google Cloud (GCP_SA_KEY)
+        if: ${{ vars.GCP_WIF_PROVIDER == '' }}
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy Cloud Run service phenomatch-web
+        run: |
+          gcloud run deploy "${CLOUD_RUN_SERVICE}" \
+            --source=. \
+            --project="${GCP_PROJECT}" \
+            --region="${GCP_REGION}" \
+            --quiet
