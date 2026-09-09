@@ -8,7 +8,7 @@ export const gcpConfig = {
   projectId: process.env.GCP_PROJECT_ID || 'devo-holding',
   organization: 'atla-o.com',
   folder: 'Devo',
-  region: process.env.GCP_REGION || 'us-central1',
+  region: process.env.GCP_REGION || 'us-west1',
   firestoreDatabase: process.env.FIRESTORE_DATABASE || '(default)',
   collections: {
     phenotypes: 'phenomatch_phenotypes',
@@ -17,7 +17,7 @@ export const gcpConfig = {
     umingleGuests: 'phenomatch_umingle_guests',
     geneUploads: 'phenomatch_gene_uploads',
   },
-  cloudRunService: 'phenomatch-matching-api',
+  cloudRunService: process.env.CLOUD_RUN_SERVICE || 'phenomatch-web',
 }
 
 export async function gcpStatus() {

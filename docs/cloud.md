@@ -29,6 +29,16 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 
 Match ranking combines visual traits, tribe, and genealogy. Data match filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon match is a live video chat (text secondary, skip to next) with someone at 50%+ phenotype similarity.
 
+## Production
+
+Public host: https://phenomatch.devoutshaman.com on GCP Cloud Run (`phenomatch-web`, project `devo-holding`, region `us-west1`). Cloudflare is DNS-only — no Workers.
+
+```bash
+gcloud run deploy phenomatch-web --source . --project=devo-holding --region=us-west1 --allow-unauthenticated
+```
+
+The container listens on `0.0.0.0:$PORT` and serves the built UI plus `/api`. Firestore/secrets are optional; the memory stub is the public-demo default. See the env table in [README.md](../README.md).
+
 ## GCP
 
 Project `devo-holding`. See [`gcp/README.md`](../gcp/README.md). The API uses an in-memory catalog until Firestore is wired.
