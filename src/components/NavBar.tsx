@@ -8,6 +8,7 @@ type Props = {
 const items: { view: AppView; label: string }[] = [
   { view: 'pheno', label: 'Pheno' },
   { view: 'match', label: 'Match' },
+  { view: 'umingle', label: 'Umingle' },
 ]
 
 export function NavBar({ current, onNavigate }: Props) {

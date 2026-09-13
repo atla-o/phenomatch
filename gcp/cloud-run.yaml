@@ -36,3 +36,7 @@ spec:
               value: '8080'
             - name: HOST
               value: 0.0.0.0
+            - name: FIRESTORE_DATABASE
+              value: '(default)'
+            - name: PHENOMATCH_STORE
+              value: firestore

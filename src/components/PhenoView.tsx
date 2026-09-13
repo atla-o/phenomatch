@@ -10,18 +10,32 @@ type Props = {
   hasProfile: boolean
   onScanComplete: (phenotype: Phenotype) => void
   onGeneLinked: (phenotype: Phenotype) => void
+  onGoMatch: () => void
 }
 
-export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked }: Props) {
+export function PhenoView({
+  phenotype,
+  hasProfile,
+  onScanComplete,
+  onGeneLinked,
+  onGoMatch,
+}: Props) {
   const [scanning, setScanning] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
+  const [justScanned, setJustScanned] = useState(false)
   const [geneBusy, setGeneBusy] = useState(false)
   const [geneError, setGeneError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const startScan = () => setScanning(true)
+  const startScan = () => {
+    setScanError(null)
+    setJustScanned(false)
+    setScanning(true)
+  }
 
   const handleScanComplete = (result: Phenotype) => {
     setScanning(false)
+    setJustScanned(true)
     onScanComplete({
       ...result,
       geneLinked: result.geneLinked || phenotype.geneLinked,
@@ -32,6 +46,11 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
           : phenotype.genealogyLineage,
       genealogyLikelihood: Math.max(result.genealogyLikelihood, phenotype.genealogyLikelihood),
     })
+  }
+
+  const handleScanFail = (message: string) => {
+    setScanning(false)
+    setScanError(message)
   }
 
   const onGeneFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -52,6 +71,10 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
 
   return (
     <section className="pheno">
+      <header className="pheno__page-header">
+        <h2 className="pheno__page-title">Pheno</h2>
+      </header>
+
       <input
         ref={fileRef}
         className="pheno__gene-input"
@@ -63,7 +86,7 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
         <button
           type="button"
           className={`pheno__action${geneBusy ? ' pheno__action--active' : ''}`}
-          disabled={geneBusy}
+          disabled={geneBusy || scanning}
           onClick={() => fileRef.current?.click()}
         >
           {geneBusy ? 'Linking…' : 'Upload gene'}
@@ -74,26 +97,45 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
           disabled={scanning}
           onClick={startScan}
         >
-          Rescan type
+          {scanning ? 'Scanning…' : hasProfile ? 'Rescan type' : 'Scan type'}
         </button>
       </div>
 
       {phenotype.geneLinked && phenotype.geneFileName && (
-        <p className="pheno__gene-linked">Genealogy linked · {phenotype.geneFileName}</p>
+        <p className="status-note status-note--ok" role="status">
+          Genealogy linked · {phenotype.geneFileName}
+        </p>
       )}
-      {geneError && <p className="pheno__gene-error">{geneError}</p>}
+      {geneError && (
+        <p className="status-note status-note--error" role="alert">
+          {geneError}
+        </p>
+      )}
+      {scanError && (
+        <p className="status-note status-note--error" role="alert">
+          {scanError}
+        </p>
+      )}
+      {justScanned && hasProfile && !scanning && (
+        <p className="status-note status-note--ok" role="status">
+          Profile ready. Match and Umingle are unlocked.
+        </p>
+      )}
 
       {!hasProfile && !scanning && (
         <div className="pheno__intro">
           <p className="pheno__intro-copy">
-            Scan visible identifiers on this Mac — melanin, eye color, facial
-            structure, tribe, and genealogy likelihood. Upload a gene file to
-            link genealogy.
+            Scan visible identifiers — melanin, eye color, facial structure, tribe,
+            and genealogy likelihood. Scores are cluster similarity, not a medical
+            reading. Upload a gene file to link genealogy.
           </p>
+          <button type="button" className="btn btn--outline" onClick={startScan}>
+            Scan type
+          </button>
         </div>
       )}
 
-      {scanning && <ScanPanel onComplete={handleScanComplete} />}
+      {scanning && <ScanPanel onComplete={handleScanComplete} onFail={handleScanFail} />}
 
       {hasProfile && !scanning && (
         <>
@@ -101,6 +143,9 @@ export function PhenoView({ phenotype, hasProfile, onScanComplete, onGeneLinked 
             <h3 className="pheno__section-title">Visual traits</h3>
             <PhenotypeTraits traits={visualTraits(phenotype)} />
           </div>
+          <button type="button" className="btn btn--outline" onClick={onGoMatch}>
+            Open matches
+          </button>
         </>
       )}
     </section>

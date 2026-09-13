@@ -13,7 +13,7 @@ npm install
 npm run cloud -- --host 0.0.0.0 --port 5173
 ```
 
-Black-and-white Pheno / Match UI. Match categories: data (swipe, collapsible virginity / genealogy / age filters) and anon. Anon match is a live video chat with a similar phenotype (50%+); text is secondary and Skip finds the next peer. Pheno can upload a gene file to link genealogy.
+Black-and-white Pheno / Match / Umingle UI. Pheno scans a cluster profile and can upload a gene file to link genealogy. Match is data swipe with collapsible virginity / genealogy / age filters. Umingle is anonymous live chat with a similar phenotype (50%+); text works in the browser and Skip finds the next peer.
 
 See [docs/cloud.md](docs/cloud.md) and [gcp/README.md](gcp/README.md).
 
@@ -23,7 +23,7 @@ Public host: [https://phenomatch.devoutshaman.com](https://phenomatch.devoutsham
 
 **Push or merge to `main` updates this host.** There is no separate beta host. Do not deploy to GCP from a cloud agent; GitHub Actions on `main` is the path.
 
-The production image runs `npm ci && npm run build`, then the Node API in `server/` serves `/api/*` and the Vite `dist/` assets on `0.0.0.0:$PORT` (Cloud Run default `8080`). Firestore and secrets are not required to boot a public demo; the in-memory catalog stub is the default.
+The production image runs `npm ci && npm run build`, then the Node API in `server/` serves `/api/*` and the Vite `dist/` assets on `0.0.0.0:$PORT` (Cloud Run default `8080`). Cloud Run uses Firestore in `devo-holding` (ADC on the runtime service account). Local `npm test` / `npm run cloud` keep a memory catalog. There is no `memory-stub` on the production path.
 
 ### Auto-deploy
 
@@ -78,9 +78,10 @@ Optional env (safe defaults for a public demo):
 | `GCP_PROJECT_ID` | `devo-holding` | Reported by `/api/health` and `/api/gcp`. |
 | `GCP_REGION` | `us-west1` | Reported by stubs. |
 | `CLOUD_RUN_SERVICE` | `phenomatch-web` | Reported by stubs. |
-| `FIRESTORE_DATABASE` | `(default)` | Unused until Firestore is wired. |
+| `FIRESTORE_DATABASE` | `(default)` | Native Firestore database id. |
+| `PHENOMATCH_STORE` | `firestore` on Cloud Run | Production store. `memory` is local/dev only and is ignored when `K_SERVICE` is set. |
 
-No `GOOGLE_APPLICATION_CREDENTIALS` is required. Until Firestore is wired, `GET /api/health` reports `mode: memory-stub`.
+No `GOOGLE_APPLICATION_CREDENTIALS` JSON key is required on Cloud Run. The runtime service account needs `roles/datastore.user` and `firestore.googleapis.com` enabled in `devo-holding`. `GET /api/health` reports `mode: firestore` when connected. See [gcp/README.md](gcp/README.md).
 
 ## Holding
 

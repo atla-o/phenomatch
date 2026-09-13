@@ -20,7 +20,7 @@ export function applyMatchFilters(matches, filters = {}) {
   return matches.filter((match) => {
     if (virginity !== 'any' && match.virginity !== virginity) return false
     if (match.genealogy < genealogyMin) return false
-    if (match.age < ageMin || match.age > ageMax) return false
+    if (match.age != null && (match.age < ageMin || match.age > ageMax)) return false
     return true
   })
 }

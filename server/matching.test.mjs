@@ -33,6 +33,14 @@ describe('applyMatchFilters', () => {
     assert.equal(result[0].phenotype.id, 'mediterranean-3')
   })
 
+  it('keeps candidates with unknown age', () => {
+    const open = applyMatchFilters(
+      [{ ...matches[0], age: null }],
+      { ageMin: 18, ageMax: 45 },
+    )
+    assert.equal(open.length, 1)
+  })
+
   it('returns none when filters exclude everyone', () => {
     const result = applyMatchFilters(matches, {
       virginity: 'virgin',

@@ -93,6 +93,7 @@ details summary::-webkit-details-marker {
   color: var(--black);
   border: 2px solid var(--black);
   background: var(--white);
+  min-height: 44px;
 }
 
 .btn--outline:hover {

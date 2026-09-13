@@ -27,7 +27,7 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 | GET | `/api/umingle/chat/:id` | Chat messages |
 | POST | `/api/umingle/chat/:id/messages` | Send a chat message |
 
-Match ranking combines visual traits, tribe, and genealogy. Data match filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon match is a live video chat (text secondary, skip to next) with someone at 50%+ phenotype similarity.
+Match ranking combines visual traits, tribe, and genealogy. Data match filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Umingle is a top-level anonymous live chat (text in the browser, skip to next) with someone at 50%+ phenotype similarity.
 
 ## Production
 
@@ -41,8 +41,8 @@ gcloud run deploy phenomatch-web --source . --project=devo-holding --region=us-w
 
 Do not pass `--allow-unauthenticated` (org policy blocks `allUsers`). Public access uses invoker IAM disabled (`run.googleapis.com/invoker-iam-disabled=true` / `--invoker-iam-check=disabled`), already true on the live service. See [README.md](../README.md) and [gcp/README.md](../gcp/README.md).
 
-The container listens on `0.0.0.0:$PORT` and serves the built UI plus `/api`. Firestore/secrets are optional; the memory stub is the public-demo default. See the env table in [README.md](../README.md).
+The container listens on `0.0.0.0:$PORT` and serves the built UI plus `/api`. Production persists profiles, match candidates, match queries, gene metadata, and Umingle guests/rooms in Firestore (`devo-holding`). The memory catalog is local/dev only. See the env table in [README.md](../README.md) and IAM in [gcp/README.md](../gcp/README.md).
 
 ## GCP
 
-Project `devo-holding`. See [`gcp/README.md`](../gcp/README.md). The API uses an in-memory catalog until Firestore is wired.
+Project `devo-holding`. See [`gcp/README.md`](../gcp/README.md). Cloud Run uses Firestore; local cloud/dev uses memory unless `PHENOMATCH_STORE=firestore`.

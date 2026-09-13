@@ -57,6 +57,37 @@ test('matches endpoint filters virginity and ranks clusters', async () => {
   assert.equal(body.matchType, 'data')
 })
 
+test('phenotype scan returns a cluster profile from the memory stub', async () => {
+  const res = await fetch(`${base}/api/phenotype/scan`, { method: 'POST' })
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  assert.equal(body.scanned, true)
+  assert.equal(body.source, 'memory-stub')
+  assert.ok(body.phenotype?.id)
+  assert.ok(Array.isArray(body.phenotype.traits))
+})
+
+test('scan persists a profile that later reads return', async () => {
+  const headers = {
+    'content-type': 'application/json',
+    'x-phenomatch-profile': 'profile-persist-1',
+  }
+  const scan = await fetch(`${base}/api/phenotype/scan`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({}),
+  })
+  assert.equal(scan.status, 200)
+  const scanned = await scan.json()
+  assert.equal(scanned.hasProfile, true)
+
+  const me = await fetch(`${base}/api/phenotype/me`, { headers })
+  const body = await me.json()
+  assert.equal(body.hasProfile, true)
+  assert.equal(body.phenotype.id, scanned.phenotype.id)
+  assert.equal(body.source, 'memory-stub')
+})
+
 test('gene upload links genealogy on the phenotype', async () => {
   const res = await fetch(`${base}/api/phenotype/gene`, {
     method: 'POST',
@@ -69,6 +100,33 @@ test('gene upload links genealogy on the phenotype', async () => {
   assert.equal(body.phenotype.geneLinked, true)
   assert.equal(body.phenotype.geneFileName, 'family.vcf')
   assert.match(body.phenotype.genealogyLineage, /family\.vcf/)
+})
+
+test('scanned profile becomes a match candidate for other profiles', async () => {
+  const scan = await fetch(`${base}/api/phenotype/scan`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-phenomatch-profile': 'profile-candidate-a',
+    },
+    body: JSON.stringify({}),
+  })
+  const scanned = await scan.json()
+
+  const res = await fetch(`${base}/api/matches`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-phenomatch-profile': 'profile-candidate-b',
+    },
+    body: JSON.stringify({ filters: { virginity: 'any', genealogyMin: 0, ageMin: 18, ageMax: 99 } }),
+  })
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  assert.ok(
+    body.matches.some((m) => m.age == null && m.phenotype.id === scanned.phenotype.id),
+    'persisted scan should appear in another profile\'s match set',
+  )
 })
 
 test('anon live chat connects a similar phenotype at 50%+', async () => {

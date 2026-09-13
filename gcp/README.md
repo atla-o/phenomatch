@@ -9,9 +9,49 @@ This folder is documentation and deploy *shape* only. Cloud agents must not appl
 | Project | `devo-holding` |
 | Cloud Run | `phenomatch-web` in `us-west1` — public host `phenomatch.devoutshaman.com` (Cloudflare DNS-only to `ghs.googlehosted.com`, no Workers). See `cloud-run.yaml` |
 | Firestore | collections `phenomatch_phenotypes`, `phenomatch_candidates`, `phenomatch_match_queries`, `phenomatch_umingle_guests`, `phenomatch_umingle_rooms`, `phenomatch_gene_uploads` |
-| Runtime | Matching API (`server/index.mjs`) uses an in-memory catalog until credentials exist |
+| Runtime | Cloud Run `phenomatch-web` reads/writes Firestore via ADC. Local `npm test` / `npm run cloud` use an in-memory catalog. |
 
-Wire `@google-cloud/firestore` in `server/gcp.mjs` when a service account for `devo-holding` is available. Until then `GET /api/gcp` reports `mode: memory-stub`.
+Production `GET /api/health` reports `mode: firestore` when connected. It never reports `memory-stub` on Cloud Run. If Firestore is unreachable, data routes return HTTP 503 (`firestore-unavailable`).
+
+## Firestore (required on Cloud Run)
+
+Native Firestore in **`devo-holding`**, database `(default)`. Not the Firebase client SDKs.
+
+Collections: `phenomatch_phenotypes`, `phenomatch_candidates`, `phenomatch_match_queries`, `phenomatch_umingle_guests`, `phenomatch_umingle_rooms`, `phenomatch_gene_uploads`, `phenomatch_meta`.
+
+Cloud agents must not create the database or bind IAM from this checkout. Devo operator (`account@atla-o.com`) does this once:
+
+```bash
+PROJECT_ID=devo-holding
+PROJECT_NUMBER="$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')"
+RUNTIME_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+gcloud services enable \
+  firestore.googleapis.com \
+  datastore.googleapis.com \
+  run.googleapis.com \
+  --project="${PROJECT_ID}"
+
+# Native mode, regional. Skip if (default) already exists.
+gcloud firestore databases create \
+  --project="${PROJECT_ID}" \
+  --location=us-west1 \
+  --type=firestore-native
+
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+  --member="serviceAccount:${RUNTIME_SA}" \
+  --role="roles/datastore.user"
+```
+
+`roles/datastore.user` is the Firestore read/write role for the Cloud Run runtime service account (Compute Engine default unless the service uses a custom SA). No JSON key and no Cloud Run secret are required: the revision uses Application Default Credentials.
+
+Optional composite indexes: [`firestore.indexes.json`](firestore.indexes.json).
+
+```bash
+gcloud firestore indexes composite create --project=devo-holding --file=gcp/firestore.indexes.json
+```
+
+Local override: `PHENOMATCH_STORE=memory` (ignored when `K_SERVICE` is set). `PHENOMATCH_STORE=firestore` forces Firestore off Cloud Run when ADC is available.
 
 ## Deploy path
 

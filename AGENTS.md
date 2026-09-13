@@ -33,4 +33,4 @@ This GitHub repo is the cloud workspace. Cloud agents clone `atla-o/phenomatch` 
 - Public host: `https://phenomatch.devoutshaman.com` on Cloud Run `phenomatch-web` (`devo-holding`, `us-west1`). Cloudflare DNS-only, no Workers.
 - Push or merge to `main` auto-deploys `phenomatch-web` via GitHub Actions (`.github/workflows/deploy-cloudrun.yml`). That is the live host — there is no separate beta. Cloud agents still must not deploy from this checkout.
 - Do not implement camera, overlay, audio, native Mac, or installer in cloud. Those stay on the local Mac agent.
-- App data belongs in GCP project `devo-holding`, not Firebase. Use `server/gcp.mjs` and `gcp/` stubs until credentials exist.
+- App data belongs in GCP project `devo-holding`, not Firebase. Production uses Firestore (`server/firestore.mjs`). Local/dev may use the memory catalog.

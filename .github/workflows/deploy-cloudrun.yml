@@ -83,4 +83,5 @@ jobs:
             --source=. \
             --project="${GCP_PROJECT}" \
             --region="${GCP_REGION}" \
+            --set-env-vars="GCP_PROJECT_ID=devo-holding,GCP_REGION=us-west1,CLOUD_RUN_SERVICE=phenomatch-web,FIRESTORE_DATABASE=(default),PHENOMATCH_STORE=firestore" \
             --quiet

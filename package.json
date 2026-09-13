@@ -14,6 +14,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google-cloud/firestore": "^9.1.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
