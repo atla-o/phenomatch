@@ -11,7 +11,8 @@ import { AnonymousMatch } from './AnonymousMatch'
 type Props = {
   hasProfile: boolean
   phenotype: Phenotype
-  initialCategory?: MatchCategory
+  category: MatchCategory
+  onCategoryChange: (category: MatchCategory) => void
   onGoPheno: () => void
 }
 
@@ -30,11 +31,10 @@ const virginityLabels: Record<MatchFilters['virginity'], string> = {
 export function MatchView({
   hasProfile,
   phenotype,
-  initialCategory = 'data',
+  category,
+  onCategoryChange,
   onGoPheno,
 }: Props) {
-  const [category, setCategory] = useState<MatchCategory>(initialCategory)
-
   return (
     <section className="match" aria-label="Match">
       <div className="match__categories" role="tablist" aria-label="Match category">
@@ -45,7 +45,7 @@ export function MatchView({
             role="tab"
             aria-selected={category === item.id}
             className={`match__category${category === item.id ? ' match__category--active' : ''}`}
-            onClick={() => setCategory(item.id)}
+            onClick={() => onCategoryChange(item.id)}
           >
             {item.label}
           </button>

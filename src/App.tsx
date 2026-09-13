@@ -22,6 +22,7 @@ function readUmingleRedirect(): { view: AppView; matchCategory: MatchCategory } 
 function App() {
   const [boot] = useState(readUmingleRedirect)
   const [view, setView] = useState<AppView>(boot.view)
+  const [matchCategory, setMatchCategory] = useState<MatchCategory>(boot.matchCategory)
   const [hasProfile, setHasProfile] = useState(() => Boolean(loadProfile()?.hasProfile))
   const [phenotype, setPhenotype] = useState<Phenotype>(
     () => loadProfile()?.phenotype ?? seedPhenotype,
@@ -61,14 +62,18 @@ function App() {
                 setHasProfile(true)
               }}
               onGeneLinked={setPhenotype}
-              onGoMatch={() => setView('match')}
+              onGoMatch={() => {
+                setMatchCategory('data')
+                setView('match')
+              }}
             />
           )}
           {view === 'match' && (
             <MatchView
               hasProfile={hasProfile}
               phenotype={phenotype}
-              initialCategory={boot.matchCategory}
+              category={matchCategory}
+              onCategoryChange={setMatchCategory}
               onGoPheno={() => setView('pheno')}
             />
           )}
