@@ -20,6 +20,11 @@ ENV HOST=0.0.0.0
 ENV GCP_PROJECT_ID=devo-holding
 ENV GCP_REGION=us-west1
 ENV CLOUD_RUN_SERVICE=phenomatch-web
+ENV FIRESTORE_DATABASE=(default)
+ENV PHENOMATCH_STORE=firestore
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 COPY server ./server
 COPY --from=build /app/dist ./dist

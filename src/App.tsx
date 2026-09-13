@@ -21,20 +21,15 @@ function App() {
   }, [hasProfile, phenotype])
 
   useEffect(() => {
-    void fetchPhenotype().then((next) => {
-      setPhenotype((current) => {
-        if (!hasProfile) return next
-        return {
-          ...next,
-          ...current,
-          geneLinked: current.geneLinked || next.geneLinked,
-          geneFileName: current.geneFileName || next.geneFileName,
-          genealogyLineage: current.geneFileName
-            ? current.genealogyLineage
-            : next.genealogyLineage,
-          genealogyLikelihood: Math.max(current.genealogyLikelihood, next.genealogyLikelihood),
-        }
-      })
+    void fetchPhenotype().then((result) => {
+      if (result.hasProfile) {
+        setHasProfile(true)
+        setPhenotype(result.phenotype)
+        return
+      }
+      if (!hasProfile) {
+        setPhenotype(result.phenotype)
+      }
     })
   }, [hasProfile])
 

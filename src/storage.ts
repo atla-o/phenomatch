@@ -1,8 +1,21 @@
 import type { Match, Phenotype } from './types'
 
 const PROFILE_KEY = 'phenomatch.profile'
+const PROFILE_ID_KEY = 'phenomatch.profileId'
 const LIKES_KEY = 'phenomatch.likes'
 const PASSED_KEY = 'phenomatch.passed'
+
+export function getOrCreateProfileId(): string {
+  try {
+    const existing = localStorage.getItem(PROFILE_ID_KEY)
+    if (existing) return existing
+    const id = crypto.randomUUID()
+    localStorage.setItem(PROFILE_ID_KEY, id)
+    return id
+  } catch {
+    return 'local-dev'
+  }
+}
 
 export type StoredProfile = {
   hasProfile: boolean
