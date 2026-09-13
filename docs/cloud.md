@@ -23,11 +23,21 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 | POST | `/api/phenotype/scan` | Simulated optical scan (no camera) |
 | POST | `/api/phenotype/gene` | Link a genealogy / gene file to the phenotype |
 | POST | `/api/matches` | Ranked data matches for filters |
-| POST | `/api/umingle/live` | Live video chat with a similar phenotype (50%+) |
-| GET | `/api/umingle/chat/:id` | Chat messages |
+| POST | `/api/umingle/join` | Join the Anon lobby (heartbeat + live peers only) |
+| POST | `/api/umingle/live` | Seek a similar live guest (50%+). Returns `waiting` when alone |
+| POST | `/api/umingle/heartbeat` | Presence + assigned room |
+| POST | `/api/umingle/leave` | Leave a room or go offline |
+| POST | `/api/umingle/signal` | WebRTC offer / answer / ICE |
+| GET | `/api/umingle/chat/:id` | Chat messages + signaling payloads |
 | POST | `/api/umingle/chat/:id/messages` | Send a chat message |
 
-Match ranking combines visual traits, tribe, and genealogy. Match uses Data and Anon toolbars at the top of the section. Data filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon is the lobby / live chat / skip flow (text in the browser) with someone at 50%+ phenotype similarity; `/api/umingle/*` still powers that pane.
+Match ranking combines visual traits, tribe, and genealogy. Match uses Data and Anon toolbars at the top of the section. Data filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon is live WebRTC video + text with someone at 50%+ phenotype similarity who is actually online. Catalog seeds are Data-only. `/api/umingle/*` still powers that pane.
+
+## Anon video filter
+
+Anon samples local and remote camera frames with the Antiporn skin / explicit box detector (`shared/antiporn-detector.mjs`, ported from `atla-o/antiporn` `extension/detector.js`). Squares cover flagged regions; a **Filtered** wall can hide the feed when the heuristic fires. Default on, user-toggleable. This is not a medical or legal classifier.
+
+Future upgrade path (not required to ship): LSPD, C4Censor, NSFW Data Source URLs, Falconsai/NSFWJS. Do not download those corpora into this repo.
 
 ## Production
 
