@@ -3,7 +3,7 @@
  */
 
 import { gcpBaseStatus } from './gcp.mjs'
-import { candidateFromPhenotype, seedGuestFromMatch } from './umingle-models.mjs'
+import { candidateFromPhenotype } from './umingle-models.mjs'
 
 export function memoryDatastore(catalog) {
   const phenotypes = new Map()
@@ -18,8 +18,6 @@ export function memoryDatastore(catalog) {
       seeded: true,
     }
     candidates.set(record.id, record)
-    const guest = seedGuestFromMatch(match)
-    guests.set(guest.id, guest)
   }
 
   return {

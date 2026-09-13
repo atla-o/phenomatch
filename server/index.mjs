@@ -173,7 +173,7 @@ const server = http.createServer(async (req, res) => {
       const profileId = profileIdOf(req, body)
       const phenotype = body.phenotype || (await store.getPhenotype(profileId)).phenotype
       const guest = await umingle.join({ guestId: body.guestId, phenotype })
-      const ranked = await umingle.listMatches(guest)
+      const snapshot = await umingle.presence(guest)
       const gcp = await gcpStatus(store)
       send(res, 200, {
         guest: {
@@ -181,10 +181,13 @@ const server = http.createServer(async (req, res) => {
           displayName: guest.displayName,
           anonymous: true,
           phenotype: guest.phenotype,
+          status: guest.status,
         },
-        matches: ranked,
-        total: ranked.length,
-        returned: ranked.length,
+        matches: snapshot.similar,
+        total: snapshot.liveCount,
+        returned: snapshot.similar.length,
+        liveCount: snapshot.liveCount,
+        similarCount: snapshot.similarCount,
         matchType: 'anonymous',
         account: 'none',
         source: gcp.mode,
@@ -216,21 +219,75 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req)
       const profileId = profileIdOf(req, body)
       const phenotype = body.phenotype || (await store.getPhenotype(profileId)).phenotype
-      const guest = await umingle.join({ guestId: body.guestId, phenotype })
+      let guest = await umingle.join({ guestId: body.guestId, phenotype })
       const room = await umingle.connectSimilar(guest, { skipPeerId: body.skipPeerId })
+      guest = (await store.getGuest(guest.id)) || guest
+      const snapshot = await umingle.presence(guest)
       send(res, 200, {
         guest: {
           id: guest.id,
           displayName: guest.displayName,
           anonymous: true,
           phenotype: guest.phenotype,
+          status: guest.status,
         },
         room,
+        waiting: !room,
+        liveCount: snapshot.liveCount,
+        similarCount: snapshot.similarCount,
         matchType: 'anonymous',
         account: 'none',
         minCompatibility: 50,
         source: store.mode,
       })
+      return
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/umingle/heartbeat') {
+      const body = await readJson(req)
+      const beat = await umingle.heartbeat(body.guestId)
+      if (!beat) {
+        send(res, 404, { error: 'guest_not_found' })
+        return
+      }
+      const snapshot = await umingle.presence(beat.guest)
+      send(res, 200, {
+        guest: {
+          id: beat.guest.id,
+          displayName: beat.guest.displayName,
+          anonymous: true,
+          phenotype: beat.guest.phenotype,
+          status: beat.guest.status,
+        },
+        room: beat.room,
+        matches: snapshot.similar,
+        liveCount: snapshot.liveCount,
+        similarCount: snapshot.similarCount,
+        matchType: 'anonymous',
+        source: store.mode,
+      })
+      return
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/umingle/leave') {
+      const body = await readJson(req)
+      const guest = await umingle.leave(body.guestId, { goOffline: Boolean(body.goOffline) })
+      if (!guest) {
+        send(res, 404, { error: 'guest_not_found' })
+        return
+      }
+      send(res, 200, {
+        guest: { id: guest.id, status: guest.status, anonymous: true },
+        matchType: 'anonymous',
+        source: store.mode,
+      })
+      return
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/umingle/signal') {
+      const body = await readJson(req)
+      const room = await umingle.postSignal(body.roomId, body.guestId, body.type, body.payload)
+      send(res, 200, { room, matchType: 'anonymous', source: store.mode })
       return
     }
 
