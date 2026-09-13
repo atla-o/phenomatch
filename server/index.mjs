@@ -79,6 +79,19 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/phenotype/scan') {
+      const body = await readJson(req)
+      const current = body.phenotype || (await store.getUserPhenotype())
+      const phenotype = await store.savePhenotype(current)
+      send(res, 200, {
+        phenotype,
+        scanned: true,
+        source: (await gcpStatus()).mode,
+        note: 'Simulated optical scan. Camera capture stays on the Mac client.',
+      })
+      return
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/phenotype/gene') {
       const body = await readJson(req)
       const phenotype = await store.linkGene({ fileName: body.fileName })

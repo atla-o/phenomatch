@@ -45,7 +45,7 @@ export type MatchFilters = {
   ageMax: number
 }
 
-export type AppView = 'pheno' | 'match'
+export type AppView = 'pheno' | 'match' | 'umingle'
 
 export const defaultMatchFilters: MatchFilters = {
   virginity: 'any',

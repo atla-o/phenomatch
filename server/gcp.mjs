@@ -46,6 +46,13 @@ export function memoryDatastore(catalog) {
     async getUserPhenotype() {
       return userPhenotype
     },
+    async savePhenotype(next) {
+      if (!next || typeof next !== 'object') {
+        return userPhenotype
+      }
+      userPhenotype = { ...userPhenotype, ...next }
+      return userPhenotype
+    },
     async linkGene({ fileName }) {
       const name = String(fileName || '').trim()
       if (!name) {

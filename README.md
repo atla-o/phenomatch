@@ -13,7 +13,7 @@ npm install
 npm run cloud -- --host 0.0.0.0 --port 5173
 ```
 
-Black-and-white Pheno / Match UI. Match categories: data (swipe, collapsible virginity / genealogy / age filters) and anon. Anon match is a live video chat with a similar phenotype (50%+); text is secondary and Skip finds the next peer. Pheno can upload a gene file to link genealogy.
+Black-and-white Pheno / Match / Umingle UI. Pheno scans a cluster profile and can upload a gene file to link genealogy. Match is data swipe with collapsible virginity / genealogy / age filters. Umingle is anonymous live chat with a similar phenotype (50%+); text works in the browser and Skip finds the next peer.
 
 See [docs/cloud.md](docs/cloud.md) and [gcp/README.md](gcp/README.md).
 

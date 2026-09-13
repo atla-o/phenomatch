@@ -6,9 +6,10 @@ import { visualTraits } from './PhenotypeTraits'
 
 type Props = {
   onComplete: (phenotype: Phenotype) => void
+  onFail?: (message: string) => void
 }
 
-export function ScanPanel({ onComplete }: Props) {
+export function ScanPanel({ onComplete, onFail }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [cameraReady, setCameraReady] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
@@ -18,8 +19,10 @@ export function ScanPanel({ onComplete }: Props) {
   const [phase, setPhase] = useState<'scanning' | 'complete'>('scanning')
   const [result, setResult] = useState<Phenotype>(userPhenotype)
   const onCompleteRef = useRef(onComplete)
+  const onFailRef = useRef(onFail)
   const resultRef = useRef(result)
   onCompleteRef.current = onComplete
+  onFailRef.current = onFail
   resultRef.current = result
 
   useEffect(() => {
@@ -50,11 +53,19 @@ export function ScanPanel({ onComplete }: Props) {
     }
 
     void startCamera()
-    void runSimulatedScan().then((phenotype) => {
-      if (cancelled) return
-      resultRef.current = phenotype
-      setResult(phenotype)
-    })
+    void runSimulatedScan()
+      .then((phenotype) => {
+        if (cancelled) return
+        if (!phenotype?.id) {
+          onFailRef.current?.('Could not finish the phenotype scan.')
+          return
+        }
+        resultRef.current = phenotype
+        setResult(phenotype)
+      })
+      .catch(() => {
+        if (!cancelled) onFailRef.current?.('Could not finish the phenotype scan.')
+      })
 
     return () => {
       cancelled = true
@@ -90,12 +101,13 @@ export function ScanPanel({ onComplete }: Props) {
       <div className="scan-panel__intro">
         <h3 className="scan-panel__heading">Phenotype scan</h3>
         <p className="scan-panel__desc">
-          This Mac captures visible identifiers — melanin, eye color, facial
-          structure, and tribe. Matching scores come from the cloud API.
+          Visible identifiers — melanin, eye color, facial structure, and tribe —
+          feed a cluster profile from the matching API. A camera on this device
+          is optional. This is not a medical test.
         </p>
         {cameraError && <p className="scan-panel__camera-note">{cameraError}</p>}
         {cameraReady && !cameraError && (
-          <p className="scan-panel__camera-note">Live camera feed (this Mac).</p>
+          <p className="scan-panel__camera-note">Live camera feed on this device.</p>
         )}
       </div>
 

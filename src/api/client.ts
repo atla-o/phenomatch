@@ -139,12 +139,15 @@ export async function runSimulatedScan(): Promise<Phenotype> {
   }
 }
 
-export async function fetchMatches(filters: MatchFilters = defaultMatchFilters): Promise<MatchesResponse> {
+export async function fetchMatches(
+  filters: MatchFilters = defaultMatchFilters,
+  phenotype?: Phenotype,
+): Promise<MatchesResponse> {
   try {
     const res = await fetch('/api/matches', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ filters }),
+      body: JSON.stringify({ filters, phenotype }),
     })
     if (!res.ok) throw new Error('matches failed')
     return (await res.json()) as MatchesResponse
@@ -157,6 +160,19 @@ export async function fetchMatches(filters: MatchFilters = defaultMatchFilters):
       source: 'client-fallback',
     }
   }
+}
+
+export async function joinUmingleLobby(phenotype: Phenotype): Promise<UmingleJoinResponse> {
+  const guestId = storedUmingleGuestId()
+  const res = await fetch('/api/umingle/join', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId, phenotype }),
+  })
+  if (!res.ok) throw new Error('umingle join failed')
+  const body = (await res.json()) as UmingleJoinResponse
+  rememberGuestId(body.guest.id)
+  return body
 }
 
 export async function joinAnonLive(phenotype: Phenotype, skipPeerId?: string): Promise<AnonLiveResponse> {

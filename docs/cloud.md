@@ -27,7 +27,7 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 | GET | `/api/umingle/chat/:id` | Chat messages |
 | POST | `/api/umingle/chat/:id/messages` | Send a chat message |
 
-Match ranking combines visual traits, tribe, and genealogy. Data match filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon match is a live video chat (text secondary, skip to next) with someone at 50%+ phenotype similarity.
+Match ranking combines visual traits, tribe, and genealogy. Data match filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Umingle is a top-level anonymous live chat (text in the browser, skip to next) with someone at 50%+ phenotype similarity.
 
 ## Production
 

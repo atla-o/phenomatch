@@ -57,6 +57,16 @@ test('matches endpoint filters virginity and ranks clusters', async () => {
   assert.equal(body.matchType, 'data')
 })
 
+test('phenotype scan returns a cluster profile from the memory stub', async () => {
+  const res = await fetch(`${base}/api/phenotype/scan`, { method: 'POST' })
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  assert.equal(body.scanned, true)
+  assert.equal(body.source, 'memory-stub')
+  assert.ok(body.phenotype?.id)
+  assert.ok(Array.isArray(body.phenotype.traits))
+})
+
 test('gene upload links genealogy on the phenotype', async () => {
   const res = await fetch(`${base}/api/phenotype/gene`, {
     method: 'POST',

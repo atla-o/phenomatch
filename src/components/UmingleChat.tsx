@@ -8,12 +8,21 @@ type Props = {
   guestId: string
   onRoom: (room: UmingleRoom) => void
   onSkip: () => void
+  onLeave: () => void
   skipping?: boolean
 }
 
-export function UmingleChat({ room, guestId, onRoom, onSkip, skipping = false }: Props) {
+export function UmingleChat({
+  room,
+  guestId,
+  onRoom,
+  onSkip,
+  onLeave,
+  skipping = false,
+}: Props) {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
   const [cameraReady, setCameraReady] = useState(false)
   const logRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -66,10 +75,13 @@ export function UmingleChat({ room, guestId, onRoom, onSkip, skipping = false }:
     const text = draft.trim()
     if (!text || sending) return
     setSending(true)
+    setSendError(null)
     try {
       const next = await sendUmingleMessage(room.id, guestId, text)
       onRoom(next)
       setDraft('')
+    } catch {
+      setSendError('Message did not send.')
     } finally {
       setSending(false)
     }
@@ -82,6 +94,19 @@ export function UmingleChat({ room, guestId, onRoom, onSkip, skipping = false }:
 
   return (
     <section className="umingle-chat umingle-chat--video" aria-label="Live video chat">
+      <div className="umingle-chat__header">
+        <button type="button" className="umingle-chat__back" onClick={onLeave}>
+          Leave
+        </button>
+        <div>
+          <h3 className="umingle-chat__name">{peerName}</h3>
+          <p className="umingle-chat__meta">
+            {peerCode}
+            {similar != null ? ` · ${similar}% similar` : ''}
+          </p>
+        </div>
+      </div>
+
       <div className="umingle-stage">
         <div className="umingle-remote" aria-label="Peer video">
           <div className="umingle-remote__feed">
@@ -160,9 +185,14 @@ export function UmingleChat({ room, guestId, onRoom, onSkip, skipping = false }:
             autoComplete="off"
           />
           <button type="submit" className="btn btn--solid" disabled={sending}>
-            Send
+            {sending ? 'Sending…' : 'Send'}
           </button>
         </div>
+        {sendError && (
+          <p className="umingle__error" role="alert">
+            {sendError}
+          </p>
+        )}
       </form>
     </section>
   )
