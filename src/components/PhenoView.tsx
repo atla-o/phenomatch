@@ -70,11 +70,7 @@ export function PhenoView({
   }
 
   return (
-    <section className="pheno">
-      <header className="pheno__page-header">
-        <h2 className="pheno__page-title">Pheno</h2>
-      </header>
-
+    <section className="pheno" aria-label="Pheno">
       <input
         ref={fileRef}
         className="pheno__gene-input"
@@ -118,7 +114,7 @@ export function PhenoView({
       )}
       {justScanned && hasProfile && !scanning && (
         <p className="status-note status-note--ok" role="status">
-          Profile ready. Match and Umingle are unlocked.
+          Profile ready. Match is unlocked.
         </p>
       )}
 
