@@ -14,7 +14,7 @@ type Props = {
   onGoPheno: () => void
 }
 
-export function UmingleView({ phenotype, hasProfile, onGoPheno }: Props) {
+export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
   const [loading, setLoading] = useState(false)
   const [joining, setJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -78,25 +78,9 @@ export function UmingleView({ phenotype, hasProfile, onGoPheno }: Props) {
     }
   }
 
-  if (!hasProfile) {
-    return (
-      <section className="umingle">
-        <header className="umingle__page-header">
-          <h2 className="umingle__page-title">Umingle</h2>
-        </header>
-        <div className="match__empty">
-          <p>Scan your type in Pheno to use anonymous live chat.</p>
-          <button type="button" className="btn btn--outline" onClick={onGoPheno}>
-            Scan in Pheno
-          </button>
-        </div>
-      </section>
-    )
-  }
-
   if (room && guestId) {
     return (
-      <section className="umingle umingle--chat">
+      <div className="anon anon--chat">
         <UmingleChat
           room={room}
           guestId={guestId}
@@ -108,21 +92,27 @@ export function UmingleView({ phenotype, hasProfile, onGoPheno }: Props) {
           }}
           skipping={joining}
         />
-      </section>
+      </div>
+    )
+  }
+
+  if (!hasProfile) {
+    return (
+      <div className="match__empty">
+        <p>Scan your type in Pheno to use anonymous live chat.</p>
+        <button type="button" className="btn btn--outline" onClick={onGoPheno}>
+          Scan in Pheno
+        </button>
+      </div>
     )
   }
 
   const similar = matches.filter((item) => item.compatibility >= 50)
 
   return (
-    <section className="umingle">
-      <header className="umingle__page-header">
-        <h2 className="umingle__page-title">Umingle</h2>
-        <p className="umingle__subtitle">Anonymous live chat · 50%+ similar phenotype</p>
-      </header>
-
-      <div className="umingle__intro">
-        <p className="umingle__intro-copy">
+    <div className="anon">
+      <div className="anon__intro">
+        <p className="anon__lede">
           Join as a guest and talk with a similar cluster. Text works here. A
           camera feed is optional and stays on the Mac client when one exists.
           This is phenotype similarity, not a medical score.
@@ -189,6 +179,6 @@ export function UmingleView({ phenotype, hasProfile, onGoPheno }: Props) {
           ))}
         </ul>
       )}
-    </section>
+    </div>
   )
 }

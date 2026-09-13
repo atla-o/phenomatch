@@ -1,17 +1,25 @@
 import { useEffect, useState } from 'react'
-import type { Match, MatchFilters, Phenotype } from '../types'
+import type { Match, MatchCategory, MatchFilters, Phenotype } from '../types'
 import { defaultMatchFilters } from '../types'
 import { ageRangeOptions, genealogyOptions } from '../data/mock'
 import { fetchMatches } from '../api/client'
 import { loadLikes, loadPassedIds, saveLikes, savePassedIds } from '../storage'
 import { CompatibilityRing } from './CompatibilityRing'
 import { PhenotypeTraits, visualTraits } from './PhenotypeTraits'
+import { AnonymousMatch } from './AnonymousMatch'
 
 type Props = {
   hasProfile: boolean
   phenotype: Phenotype
+  category: MatchCategory
+  onCategoryChange: (category: MatchCategory) => void
   onGoPheno: () => void
 }
+
+const categories: { id: MatchCategory; label: string }[] = [
+  { id: 'data', label: 'Data' },
+  { id: 'anonymous', label: 'Anon' },
+]
 
 const virginityLabels: Record<MatchFilters['virginity'], string> = {
   any: 'Any',
@@ -20,13 +28,39 @@ const virginityLabels: Record<MatchFilters['virginity'], string> = {
   undisclosed: 'Undisclosed',
 }
 
-export function MatchView({ hasProfile, phenotype, onGoPheno }: Props) {
+export function MatchView({
+  hasProfile,
+  phenotype,
+  category,
+  onCategoryChange,
+  onGoPheno,
+}: Props) {
   return (
-    <section className="match">
-      <header className="match__page-header">
-        <h2 className="match__page-title">Match</h2>
-      </header>
-      <DataMatch hasProfile={hasProfile} phenotype={phenotype} onGoPheno={onGoPheno} />
+    <section className="match" aria-label="Match">
+      <div className="match__categories" role="tablist" aria-label="Match category">
+        {categories.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={category === item.id}
+            className={`match__category${category === item.id ? ' match__category--active' : ''}`}
+            onClick={() => onCategoryChange(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {category === 'anonymous' ? (
+        <AnonymousMatch
+          phenotype={phenotype}
+          hasProfile={hasProfile}
+          onGoPheno={onGoPheno}
+        />
+      ) : (
+        <DataMatch hasProfile={hasProfile} phenotype={phenotype} onGoPheno={onGoPheno} />
+      )}
     </section>
   )
 }
