@@ -138,6 +138,16 @@ export function PhenoView({
           <div className="pheno__card">
             <h3 className="pheno__section-title">Visual traits</h3>
             <PhenotypeTraits traits={visualTraits(phenotype)} />
+            {phenotype.tribalMarkers && phenotype.tribalMarkers.length > 0 && (
+              <div className="pheno__markers" aria-label="Tribal markers">
+                {phenotype.tribalMarkers.map((marker) => (
+                  <span key={marker.id} className="pheno__marker">
+                    {marker.label}
+                    {marker.value != null ? ` ${marker.value}%` : ''}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <button type="button" className="btn btn--outline" onClick={onGoMatch}>
             Open matches

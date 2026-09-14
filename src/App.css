@@ -172,6 +172,22 @@
   padding: 16px;
 }
 
+.pheno__markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+
+.pheno__marker {
+  border: 1px solid var(--black);
+  padding: 3px 6px;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* ── Scan panel (inside pheno) ── */
 
 .scan-panel {
@@ -185,7 +201,8 @@
 
 .scan-panel__intro {
   border: 1px solid var(--black);
-  padding: 16px;
+  padding: 10px 12px;
+  flex-shrink: 0;
 }
 
 .scan-panel__heading {
@@ -218,6 +235,7 @@
 .scan-panel__viewport {
   display: flex;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .scan-panel__frame {
@@ -318,12 +336,14 @@
   font-size: 0.82rem;
   text-align: center;
   min-height: 1.2em;
+  flex-shrink: 0;
 }
 
 .scan-panel__progress {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .scan-panel__progress-bar {
@@ -351,7 +371,11 @@
   flex-direction: column;
   gap: 4px;
   border-top: 1px solid var(--black);
-  padding-top: 12px;
+  padding-top: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  overflow: clip;
 }
 
 .scan-panel__detected-item {
@@ -370,6 +394,16 @@
   margin-left: auto;
   font-family: var(--font-display);
   font-weight: 600;
+}
+
+.scan-panel__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.scan-panel__actions .btn {
+  flex: 1;
 }
 
 /* ── Traits ── */

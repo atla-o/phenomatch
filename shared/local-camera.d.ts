@@ -1,3 +1,5 @@
+export function videoConstraints(options?: { audio?: boolean }): MediaStreamConstraints[]
+
 export const CAMERA_CONSTRAINTS: MediaStreamConstraints[]
 
 export function isAbortError(error: { name?: string } | null | undefined): boolean
@@ -11,4 +13,5 @@ export function requestLocalCamera(options?: {
   enumerateDevices?: () => Promise<MediaDeviceInfo[]>
   wait?: (ms: number) => Promise<void>
   signal?: AbortSignal
+  audio?: boolean
 }): Promise<MediaStream>

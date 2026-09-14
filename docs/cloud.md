@@ -20,7 +20,7 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 | GET | `/api/gcp` | `devo-holding` project stub |
 | GET | `/api/filters` | Virginity, genealogy, age options |
 | GET | `/api/phenotype/me` | Current cluster profile |
-| POST | `/api/phenotype/scan` | Simulated optical scan (no camera) |
+| POST | `/api/phenotype/scan` | Assign nearest catalog type from analyzed traits (camera/still). Empty body persists the current profile |
 | POST | `/api/phenotype/gene` | Link a genealogy / gene file to the phenotype |
 | POST | `/api/matches` | Ranked data matches for filters |
 | POST | `/api/umingle/join` | Join the Anon lobby (heartbeat + live peers only) |
@@ -43,6 +43,10 @@ Anon WebRTC uses extra STUN plus public Open Relay / Metered TURN by default (`G
 Anon samples local and remote camera frames with the Antiporn skin / explicit box detector (`shared/antiporn-detector.mjs`, ported from `atla-o/antiporn` `extension/detector.js`). Squares cover flagged regions; a **Filtered** wall can hide the feed when the heuristic fires. Default on, user-toggleable. This is not a medical or legal classifier.
 
 Future upgrade path (not required to ship): LSPD, C4Censor, NSFW Data Source URLs, Falconsai/NSFWJS. Do not download those corpora into this repo.
+
+## Phenotype scan
+
+Scan type uses the device camera (or a still) and MediaPipe Face Landmarker in the browser. Trait scores including tribe are computed from landmarks + image samples, then `POST /api/phenotype/scan` assigns the nearest catalog type. See [scan.md](scan.md). This is not a medical or genetic test.
 
 ## Production
 

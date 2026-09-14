@@ -1,12 +1,17 @@
-export const CAMERA_CONSTRAINTS = [
-  {
-    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-    audio: true,
-  },
-  { video: { facingMode: 'user' }, audio: true },
-  { video: true, audio: true },
-  { video: true },
-]
+export function videoConstraints({ audio = true } = {}) {
+  const constraints = [
+    {
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio,
+    },
+    { video: { facingMode: 'user' }, audio },
+    { video: true, audio },
+  ]
+  constraints.push(audio ? { video: true } : { video: true, audio: false })
+  return constraints
+}
+
+export const CAMERA_CONSTRAINTS = videoConstraints({ audio: true })
 
 export function isAbortError(error) {
   return error?.name === 'AbortError'
@@ -61,6 +66,7 @@ async function tryGetUserMedia(getUserMedia, constraints, signal, wait) {
  *   enumerateDevices?: () => Promise<MediaDeviceInfo[]>,
  *   wait?: (ms: number) => Promise<void>,
  *   signal?: AbortSignal,
+ *   audio?: boolean,
  * }} [options]
  * @returns {Promise<MediaStream>}
  */
@@ -69,6 +75,7 @@ export async function requestLocalCamera({
   enumerateDevices,
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   signal,
+  audio = true,
 } = {}) {
   const gum =
     getUserMedia ||
@@ -86,7 +93,7 @@ export async function requestLocalCamera({
   if (signal?.aborted) throw abortedError()
 
   let lastError
-  for (const constraints of CAMERA_CONSTRAINTS) {
+  for (const constraints of videoConstraints({ audio })) {
     if (signal?.aborted) throw abortedError()
     try {
       return await tryGetUserMedia(gum, constraints, signal, wait)

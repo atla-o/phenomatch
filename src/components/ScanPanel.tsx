@@ -1,113 +1,262 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Phenotype } from '../types'
-import { scanSteps, userPhenotype } from '../data/mock'
-import { runSimulatedScan } from '../api/client'
-import { visualTraits } from './PhenotypeTraits'
+import type { Phenotype, Trait } from '../types'
+import { submitPhenotypeScan } from '../api/client'
+import { scanSteps } from '../data/mock'
+import { analyzeCanvas, analyzeVideoFrame, canvasFromFile } from '../lib/analyzeFace'
+import { cameraErrorMessage, isPermissionDenied, requestLocalCamera } from '../lib/localCamera'
 
 type Props = {
   onComplete: (phenotype: Phenotype) => void
   onFail?: (message: string) => void
 }
 
+type Phase = 'preparing' | 'scanning' | 'complete' | 'error'
+
+const REVEAL_STEPS = [
+  { key: 'melanin' as const, label: 'Analyzing melanin distribution…', progress: 48 },
+  { key: 'eyeColor' as const, label: 'Reading eye color…', progress: 56 },
+  { key: 'hairPattern' as const, label: 'Assessing hair pattern…', progress: 62 },
+  { key: 'noseShape' as const, label: 'Mapping nose shape…', progress: 68 },
+  { key: 'lipFullness' as const, label: 'Measuring lip fullness…', progress: 74 },
+  { key: 'facialStructure' as const, label: 'Mapping facial structure…', progress: 80 },
+  { key: 'jawLine' as const, label: 'Reading jaw line…', progress: 84 },
+  { key: 'cheekboneStructure' as const, label: 'Assessing cheekbone structure…', progress: 88 },
+  { key: 'tribe' as const, label: 'Inferring tribal markers…', progress: 93 },
+]
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+function traitIdForKey(key: (typeof REVEAL_STEPS)[number]['key']) {
+  if (key === 'eyeColor') return 'eye-color'
+  if (key === 'hairPattern') return 'hair'
+  if (key === 'noseShape') return 'nose'
+  if (key === 'lipFullness') return 'lips'
+  if (key === 'facialStructure') return 'facial'
+  if (key === 'jawLine') return 'jaw'
+  if (key === 'cheekboneStructure') return 'cheekbone'
+  return key
+}
+
 export function ScanPanel({ onComplete, onFail }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const [cameraReady, setCameraReady] = useState(false)
-  const [cameraError, setCameraError] = useState<string | null>(null)
-  const [progress, setProgress] = useState(0)
-  const [stepIndex, setStepIndex] = useState(0)
-  const [detectedTraits, setDetectedTraits] = useState<ReturnType<typeof visualTraits>>([])
-  const [phase, setPhase] = useState<'scanning' | 'complete'>('scanning')
-  const [result, setResult] = useState<Phenotype>(userPhenotype)
+  const [phase, setPhase] = useState<Phase>('preparing')
+  const [status, setStatus] = useState(scanSteps[0])
+  const [progress, setProgress] = useState(4)
+  const [error, setError] = useState<string | null>(null)
+  const [detectedTraits, setDetectedTraits] = useState<Trait[]>([])
+  const [result, setResult] = useState<Phenotype | null>(null)
+  const [retryKey, setRetryKey] = useState(0)
+  const [stillFile, setStillFile] = useState<File | null>(null)
   const onCompleteRef = useRef(onComplete)
   const onFailRef = useRef(onFail)
-  const resultRef = useRef(result)
   onCompleteRef.current = onComplete
   onFailRef.current = onFail
-  resultRef.current = result
+
+  const retry = () => {
+    setError(null)
+    setPhase('preparing')
+    setProgress(4)
+    setStatus(scanSteps[0])
+    setDetectedTraits([])
+    setResult(null)
+    setStillFile(null)
+    setRetryKey((key) => key + 1)
+  }
 
   useEffect(() => {
     let stream: MediaStream | null = null
     let cancelled = false
+    const video = videoRef.current
 
-    const startCamera = async () => {
+    const fail = (message: string, fatal = false) => {
+      if (cancelled) return
+      setPhase('error')
+      setError(message)
+      if (fatal) onFailRef.current?.(message)
+    }
+
+    const attachStream = async (next: MediaStream) => {
+      stream = next
+      if (!video) return
+      video.srcObject = next
+      await video.play()
+      if (!cancelled) setCameraReady(true)
+    }
+
+    const run = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 800 } },
-          audio: false,
-        })
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop())
+        setPhase('preparing')
+        setProgress(8)
+        setStatus('Opening camera…')
+
+        if (stillFile) {
+          setCameraReady(false)
+          setStatus('Loading optical pipeline…')
+          setProgress(22)
+          const canvas = await canvasFromFile(stillFile)
+          if (cancelled) return
+          setStatus('Finding a face…')
+          setProgress(36)
+          const analyzed = await analyzeCanvas(canvas, 'still')
+          if (cancelled) return
+          await finish(analyzed)
           return
         }
-        const video = videoRef.current
-        if (video) {
-          video.srcObject = stream
-          await video.play()
-          setCameraReady(true)
+
+        try {
+          const next = await requestLocalCamera({ audio: false })
+          if (cancelled) {
+            next.getTracks().forEach((track) => track.stop())
+            return
+          }
+          await attachStream(next)
+        } catch (err) {
+          fail(cameraErrorMessage(err as { name?: string }))
+          return
         }
-      } catch {
-        if (!cancelled) {
-          setCameraError('Camera unavailable. Using optical fallback.')
+
+        setStatus('Loading optical pipeline…')
+        setProgress(22)
+        setPhase('scanning')
+
+        const started = Date.now()
+        let analyzed = null
+        while (!cancelled && Date.now() - started < 12000) {
+          setStatus('Finding a face…')
+          setProgress(36)
+          try {
+            if (videoRef.current) {
+              analyzed = await analyzeVideoFrame(videoRef.current)
+              break
+            }
+          } catch (err) {
+            if ((err as { name?: string }).name !== 'NoFaceError') throw err
+          }
+          await wait(280)
         }
+        if (cancelled) return
+        if (!analyzed) {
+          fail('No face in view. Center your face and retry, or use a photo.')
+          return
+        }
+        await finish(analyzed)
+      } catch (err) {
+        if (cancelled) return
+        const name = (err as { name?: string; message?: string }).name || ''
+        const message = String((err as { message?: string }).message || err)
+        if (name === 'NoFaceError' || message === 'no_face') {
+          fail('No face in view. Center your face and retry, or use a photo.')
+          return
+        }
+        if (isPermissionDenied(err as { name?: string })) {
+          fail(cameraErrorMessage(err as { name?: string }))
+          return
+        }
+        fail('Could not finish the phenotype scan. Retry or use a photo.')
       }
     }
 
-    void startCamera()
-    void runSimulatedScan()
-      .then((phenotype) => {
+    const finish = async (analyzed: Awaited<ReturnType<typeof analyzeVideoFrame>>) => {
+      setPhase('scanning')
+      const previewTraits: Trait[] = []
+      for (const step of REVEAL_STEPS) {
         if (cancelled) return
-        if (!phenotype?.id) {
-          onFailRef.current?.('Could not finish the phenotype scan.')
-          return
-        }
-        resultRef.current = phenotype
-        setResult(phenotype)
-      })
-      .catch(() => {
-        if (!cancelled) onFailRef.current?.('Could not finish the phenotype scan.')
-      })
+        setStatus(step.label)
+        setProgress(step.progress)
+        const id = traitIdForKey(step.key)
+        previewTraits.push({
+          id,
+          label: id === 'tribe' ? 'Tribe' : step.label.replace('…', ''),
+          value: analyzed.traits[step.key],
+          category: id === 'tribe' ? 'tribal' : 'physical',
+        })
+        setDetectedTraits([...previewTraits])
+        await wait(120)
+      }
 
+      setStatus('Assigning catalog type…')
+      setProgress(97)
+      const phenotype = await submitPhenotypeScan({
+        traits: analyzed.traits,
+        metrics: {
+          extra: {
+            intercanthalIndex: analyzed.extra.intercanthalIndex,
+            mouthIndex: analyzed.extra.mouthIndex,
+            faceIndex: analyzed.extra.faceIndex,
+          },
+          landmarkCount: analyzed.landmarkCount,
+          source: analyzed.source,
+        },
+      })
+      if (cancelled) return
+      if (!phenotype?.id) {
+        fail('Could not finish the phenotype scan.', true)
+        return
+      }
+      setResult(phenotype)
+      const tribe = phenotype.traits.find((trait) => trait.id === 'tribe')
+      setDetectedTraits(
+        [
+          {
+            id: 'type',
+            label: phenotype.name,
+            category: 'tribal' as const,
+            displayValue: phenotype.code,
+          },
+          tribe,
+          ...(phenotype.tribalMarkers || []).filter((marker) => marker.id !== 'tribe'),
+        ].filter(Boolean) as Trait[],
+      )
+      setStatus('Scan complete')
+      setProgress(100)
+      setPhase('complete')
+      window.setTimeout(() => {
+        if (!cancelled) onCompleteRef.current(phenotype)
+      }, 700)
+    }
+
+    void run()
     return () => {
       cancelled = true
-      stream?.getTracks().forEach((t) => t.stop())
+      stream?.getTracks().forEach((track) => track.stop())
+      if (video) video.srcObject = null
     }
-  }, [])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        const next = Math.min(p + 1.5, 100)
-        const newStep = Math.floor((next / 100) * scanSteps.length)
-        setStepIndex(Math.min(newStep, scanSteps.length - 1))
-
-        const visual = visualTraits(resultRef.current)
-        const traitCount = Math.floor((next / 100) * visual.length)
-        setDetectedTraits(visual.slice(0, traitCount))
-
-        if (next >= 100) {
-          clearInterval(interval)
-          setPhase('complete')
-          window.setTimeout(() => onCompleteRef.current(resultRef.current), 800)
-        }
-        return next
-      })
-    }, 60)
-
-    return () => clearInterval(interval)
-  }, [])
+  }, [retryKey, stillFile])
 
   return (
     <div className="scan-panel">
+      <input
+        ref={fileRef}
+        className="pheno__gene-input"
+        type="file"
+        accept="image/*"
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          event.target.value = ''
+          if (!file) return
+          setError(null)
+          setPhase('preparing')
+          setDetectedTraits([])
+          setStillFile(file)
+          setRetryKey((key) => key + 1)
+        }}
+      />
       <div className="scan-panel__intro">
         <h3 className="scan-panel__heading">Phenotype scan</h3>
         <p className="scan-panel__desc">
-          Visible identifiers — melanin, eye color, facial structure, and tribe —
-          feed a cluster profile from the matching API. A camera on this device
-          is optional. This is not a medical test.
+          Camera frames are scored for visible identifiers — melanin, eye color,
+          facial structure, and tribe — then mapped onto the type catalog.
+          Cluster similarity, not a medical or genetic test.
         </p>
-        {cameraError && <p className="scan-panel__camera-note">{cameraError}</p>}
-        {cameraReady && !cameraError && (
+        {cameraReady && phase !== 'error' && (
           <p className="scan-panel__camera-note">Live camera feed on this device.</p>
+        )}
+        {stillFile && (
+          <p className="scan-panel__camera-note">Analyzing a captured still.</p>
         )}
       </div>
 
@@ -142,7 +291,7 @@ export function ScanPanel({ onComplete, onFail }: Props) {
             </>
           )}
 
-          {detectedTraits.map((trait, i) => (
+          {detectedTraits.slice(0, 6).map((trait, i) => (
             <div
               key={trait.id}
               className="scan-panel__marker"
@@ -159,8 +308,8 @@ export function ScanPanel({ onComplete, onFail }: Props) {
         </div>
       </div>
 
-      <p className="scan-panel__status">
-        {phase === 'complete' ? 'Scan complete' : scanSteps[stepIndex]}
+      <p className="scan-panel__status" role="status">
+        {phase === 'error' ? error : phase === 'complete' ? 'Scan complete' : status}
       </p>
 
       <div className="scan-panel__progress">
@@ -169,6 +318,17 @@ export function ScanPanel({ onComplete, onFail }: Props) {
         </div>
         <span className="scan-panel__progress-text">{Math.round(progress)}%</span>
       </div>
+
+      {phase === 'error' && (
+        <div className="scan-panel__actions">
+          <button type="button" className="btn btn--outline" onClick={retry}>
+            Retry
+          </button>
+          <button type="button" className="btn btn--outline" onClick={() => fileRef.current?.click()}>
+            Use a photo
+          </button>
+        </div>
+      )}
 
       {detectedTraits.length > 0 && (
         <ul className="scan-panel__detected">
@@ -182,6 +342,12 @@ export function ScanPanel({ onComplete, onFail }: Props) {
             </li>
           ))}
         </ul>
+      )}
+
+      {result?.tribalMarkers && phase === 'complete' && (
+        <p className="scan-panel__camera-note">
+          Tribal markers computed from this face and used to assign {result.name}.
+        </p>
       )}
     </div>
   )

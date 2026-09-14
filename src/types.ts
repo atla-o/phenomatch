@@ -7,6 +7,14 @@ export type Trait = {
   displayValue?: string
 }
 
+export type TribalMarker = Trait
+
+export type PhenotypeScanMeta = {
+  source?: string
+  distance?: number
+  landmarkCount?: number | null
+}
+
 export type Phenotype = {
   id: string
   name: string
@@ -17,6 +25,9 @@ export type Phenotype = {
   genealogyLineage: string
   geneLinked?: boolean
   geneFileName?: string
+  tribalMarkers?: TribalMarker[]
+  scanConfidence?: number
+  scan?: PhenotypeScanMeta
 }
 
 export type VirginityStatus = 'virgin' | 'non-virgin' | 'undisclosed'

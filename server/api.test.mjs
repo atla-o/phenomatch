@@ -57,7 +57,7 @@ test('matches endpoint filters virginity and ranks clusters', async () => {
   assert.equal(body.matchType, 'data')
 })
 
-test('phenotype scan returns a cluster profile from the memory stub', async () => {
+test('phenotype scan without traits persists the current cluster profile', async () => {
   const res = await fetch(`${base}/api/phenotype/scan`, { method: 'POST' })
   assert.equal(res.status, 200)
   const body = await res.json()
@@ -65,6 +65,62 @@ test('phenotype scan returns a cluster profile from the memory stub', async () =
   assert.equal(body.source, 'memory-stub')
   assert.ok(body.phenotype?.id)
   assert.ok(Array.isArray(body.phenotype.traits))
+})
+
+test('phenotype scan with analyzed traits assigns nearest catalog type', async () => {
+  const fair = await fetch(`${base}/api/phenotype/scan`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-phenomatch-profile': 'scan-fair-1',
+    },
+    body: JSON.stringify({
+      traits: {
+        melanin: 24,
+        eyeColor: 90,
+        hairPattern: 26,
+        noseShape: 30,
+        lipFullness: 32,
+        facialStructure: 50,
+        jawLine: 68,
+        cheekboneStructure: 84,
+      },
+      metrics: { extra: { intercanthalIndex: 0.22, mouthIndex: 0.28 }, source: 'still' },
+    }),
+  })
+  assert.equal(fair.status, 200)
+  const fairBody = await fair.json()
+  assert.equal(fairBody.scanned, true)
+  assert.match(fairBody.assignedTypeId, /baltic|nordic|north-sea/)
+  const fairTribe = fairBody.phenotype.traits.find((t) => t.id === 'tribe')
+  assert.ok(fairTribe?.value > 0)
+  assert.ok(fairBody.phenotype.tribalMarkers?.some((m) => m.id === 'tribe'))
+
+  const deep = await fetch(`${base}/api/phenotype/scan`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-phenomatch-profile': 'scan-deep-1',
+    },
+    body: JSON.stringify({
+      traits: {
+        melanin: 88,
+        eyeColor: 14,
+        hairPattern: 90,
+        noseShape: 80,
+        lipFullness: 84,
+        facialStructure: 66,
+        jawLine: 56,
+        cheekboneStructure: 50,
+      },
+      metrics: { extra: { intercanthalIndex: 0.34, mouthIndex: 0.42 }, source: 'still' },
+    }),
+  })
+  const deepBody = await deep.json()
+  assert.notEqual(deepBody.phenotype.id, fairBody.phenotype.id)
+  const deepTribe = deepBody.phenotype.traits.find((t) => t.id === 'tribe')
+  assert.notEqual(deepTribe.value, fairTribe.value)
+  assert.match(deepBody.phenotype.id, /west-african|sahel|nile/)
 })
 
 test('scan persists a profile that later reads return', async () => {
