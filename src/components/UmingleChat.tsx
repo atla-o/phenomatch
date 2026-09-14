@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { UmingleRoom } from '../api/client'
 import { fetchUmingleChat, sendUmingleMessage } from '../api/client'
@@ -33,7 +33,6 @@ export function UmingleChat({
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [filter, setFilter] = useState(loadAnonFilter)
-  const logRef = useRef<HTMLDivElement>(null)
   const { remoteStream, connection, signalError, retry } = useAnonCall(
     room,
     guestId,
@@ -51,10 +50,6 @@ export function UmingleChat({
     }, 800)
     return () => window.clearInterval(timer)
   }, [guestId, onRoom, room.id])
-
-  useEffect(() => {
-    logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
-  }, [room.messages.length])
 
   const send = async (event: FormEvent) => {
     event.preventDefault()
@@ -224,7 +219,7 @@ export function UmingleChat({
         </div>
       )}
 
-      <div className="umingle-chat__log umingle-chat__log--compact" ref={logRef} role="log">
+      <div className="umingle-chat__log umingle-chat__log--compact" role="log">
         {room.messages.length === 0 && (
           <p className="umingle-chat__empty">Text while on video.</p>
         )}

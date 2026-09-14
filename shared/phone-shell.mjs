@@ -24,5 +24,7 @@ export function readViewportSize(win = globalThis) {
   return {
     width: Number(view?.width || win?.innerWidth) || PHONE_DESIGN_WIDTH,
     height: Number(view?.height || win?.innerHeight) || PHONE_DESIGN_HEIGHT,
+    offsetLeft: Number(view?.offsetLeft) || 0,
+    offsetTop: Number(view?.offsetTop) || 0,
   }
 }

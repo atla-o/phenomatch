@@ -8,4 +8,9 @@ export function computePhoneScale(
   options?: { maxScale?: number },
 ): number
 
-export function readViewportSize(win?: Window): { width: number; height: number }
+export function readViewportSize(win?: Window): {
+  width: number
+  height: number
+  offsetLeft: number
+  offsetTop: number
+}

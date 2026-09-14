@@ -1,11 +1,15 @@
 .app {
   position: absolute;
-  inset: 0;
+  top: var(--vv-y, 0px);
+  left: var(--vv-x, 0px);
+  width: var(--vv-w, 100%);
+  height: var(--vv-h, 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   background: var(--white);
+  touch-action: none;
 }
 
 .app__fit {
@@ -546,12 +550,13 @@
 .anon__intro {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .anon__lede {
-  font-size: 0.88rem;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .anon__functions {
@@ -771,13 +776,14 @@
 
 .match-card {
   border: 2px solid var(--black);
-  padding: 12px;
+  padding: 8px 10px;
   animation: card-in 0.35s ease-out;
   flex: 1;
   min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap: 6px;
 }
 
 .match-card--exit-left {
@@ -805,12 +811,13 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 0;
+  flex-shrink: 0;
 }
 
 .match-card__avatar {
-  width: 56px;
-  height: 56px;
+  width: 40px;
+  height: 40px;
   background: var(--black);
   display: flex;
   align-items: center;
@@ -821,20 +828,24 @@
   color: var(--white);
 }
 
+.match-card__info {
+  flex-shrink: 0;
+}
+
 .match-card__name {
-  font-size: 1.15rem;
+  font-size: 0.95rem;
 }
 
 .match-card__tagline {
-  font-size: 0.85rem;
-  margin-top: 4px;
+  font-size: 0.76rem;
+  margin-top: 2px;
 }
 
 .match-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .match-card__meta span {
@@ -846,33 +857,42 @@
 .match-card__compat {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 16px 0;
+  gap: 8px;
+  margin: 0;
   border-top: 1px solid var(--black);
-  padding-top: 16px;
+  padding-top: 6px;
+  flex-shrink: 0;
 }
 
 .compat-block h4 {
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
 
 .compat-block li {
-  font-size: 0.76rem;
-  padding: 3px 0;
-  line-height: 1.4;
+  font-size: 0.7rem;
+  padding: 1px 0;
+  line-height: 1.25;
 }
 
 .compat-block li::before {
   content: '— ';
 }
 
-.match-card__traits summary {
-  font-size: 0.82rem;
-  padding: 8px 0;
-  text-decoration: underline;
+.match-card__traits {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--black);
+  padding-top: 4px;
+}
+
+.match-card__traits .trait-list {
+  gap: 2px;
 }
 
 /* ── Compatibility ring ── */
@@ -917,7 +937,8 @@
   display: flex;
   justify-content: center;
   gap: 24px;
-  padding: 8px 0;
+  padding: 4px 0;
+  flex-shrink: 0;
 }
 
 .match-action {
@@ -1424,9 +1445,27 @@
 
 .anon__preview-fallback {
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding: 16px;
   text-align: center;
+  z-index: 1;
+  background:
+    linear-gradient(var(--white), var(--white)),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 19px,
+      rgba(0, 0, 0, 0.06) 19px,
+      rgba(0, 0, 0, 0.06) 20px
+    );
+}
+
+.anon__preview-fallback p {
+  font-size: 0.82rem;
+}
+
+.anon__preview-fallback .btn {
+  max-width: 220px;
 }
 
 /* ── Nav bar ── */

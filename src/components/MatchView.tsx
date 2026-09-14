@@ -345,10 +345,9 @@ function DataMatch({
             </div>
           </div>
 
-          <details className="match-card__traits">
-            <summary>Full trait breakdown</summary>
+          <div className="match-card__traits">
             <PhenotypeTraits traits={visualTraits(match.phenotype)} compact />
-          </details>
+          </div>
         </div>
       )}
 

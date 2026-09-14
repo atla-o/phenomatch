@@ -6,6 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(self)" />
     <title>PhenoMatch</title>
+    <script>
+      (function () {
+        var view = window.visualViewport
+        var w = (view && view.width) || window.innerWidth || 390
+        var h = (view && view.height) || window.innerHeight || 844
+        var max = w <= 480 ? Infinity : 1
+        var scale = Math.min(w / 390, h / 844, max)
+        var root = document.documentElement
+        root.style.setProperty('--phone-scale', String(scale))
+        root.style.setProperty('--vv-w', w + 'px')
+        root.style.setProperty('--vv-h', h + 'px')
+        root.style.setProperty('--vv-x', ((view && view.offsetLeft) || 0) + 'px')
+        root.style.setProperty('--vv-y', ((view && view.offsetTop) || 0) + 'px')
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
