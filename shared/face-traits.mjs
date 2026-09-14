@@ -9,8 +9,9 @@
  *   contaminate samples.
  * - Hair: darkness of a band above the forehead. Baldness, hats, and
  *   backgrounds leak in.
- * - Nose / lips / facial / jaw / cheekbone: 2D landmark ratios. Pose, focal
- *   length, and expression move them.
+ * - Nose / lips / facial / jaw / cheekbone: 2D landmark ratios. Distances
+ *   are aspect-corrected so landscape frames do not collapse facial
+ *   structure. Pose, focal length, and expression still move them.
  * - Tribe: a derived cluster index from pigmentation, iris lightness,
  *   breadth (nose+lips), relief (jaw+cheekbone), plus extra intercanthal
  *   and mouth-width ratios. It is a visible-identifier coordinate used to
@@ -119,16 +120,17 @@ function point(landmarks, index) {
   return p
 }
 
-function dist(a, b) {
+function dist(a, b, aspect = 1) {
   if (!a || !b) return 0
-  return Math.hypot(a.x - b.x, a.y - b.y)
+  return Math.hypot((a.x - b.x) * aspect, a.y - b.y)
 }
 
 function mix(a, b, weightA = 0.5) {
   return a * weightA + b * (1 - weightA)
 }
 
-export function geometryFromLandmarks(landmarks) {
+export function geometryFromLandmarks(landmarks, image) {
+  const aspect = image?.height ? image.width / image.height : 1
   const forehead = point(landmarks, LM.forehead)
   const chin = point(landmarks, LM.chin)
   const leftCheek = point(landmarks, LM.leftCheek)
@@ -146,14 +148,14 @@ export function geometryFromLandmarks(landmarks) {
   const leftEyeInner = point(landmarks, LM.leftEyeInner)
   const rightEyeInner = point(landmarks, LM.rightEyeInner)
 
-  const faceWidth = dist(leftCheek, rightCheek) || 0.4
-  const faceHeight = dist(forehead, chin) || 0.6
-  const noseWidth = dist(leftNostril, rightNostril)
-  const mouthWidth = dist(mouthLeft, mouthRight) || 0.2
-  const lipHeight = dist(upperLip, lowerLip)
-  const jawWidth = dist(leftJaw, rightJaw)
-  const cheekboneWidth = dist(leftCheekbone, rightCheekbone)
-  const intercanthal = dist(leftEyeInner, rightEyeInner)
+  const faceWidth = dist(leftCheek, rightCheek, aspect) || 0.4
+  const faceHeight = dist(forehead, chin, aspect) || 0.6
+  const noseWidth = dist(leftNostril, rightNostril, aspect)
+  const mouthWidth = dist(mouthLeft, mouthRight, aspect) || 0.2
+  const lipHeight = dist(upperLip, lowerLip, aspect)
+  const jawWidth = dist(leftJaw, rightJaw, aspect)
+  const cheekboneWidth = dist(leftCheekbone, rightCheekbone, aspect)
+  const intercanthal = dist(leftEyeInner, rightEyeInner, aspect)
 
   const extra = {
     intercanthalIndex: intercanthal / faceWidth,
@@ -367,7 +369,7 @@ export function scoreFace(landmarks, image) {
     error.code = 'NO_FACE'
     throw error
   }
-  const geom = geometryFromLandmarks(landmarks)
+  const geom = geometryFromLandmarks(landmarks, image)
   const colors = colorsFromImage(image, landmarks, geom)
   const traits = {
     melanin: colors.melanin,

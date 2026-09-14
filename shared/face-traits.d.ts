@@ -34,7 +34,10 @@ export type TribalExtra = {
   landmarkCount?: number
 }
 
-export function geometryFromLandmarks(landmarks: Array<{ x: number; y: number; z?: number }>): {
+export function geometryFromLandmarks(
+  landmarks: Array<{ x: number; y: number; z?: number }>,
+  image?: { width: number; height: number },
+): {
   faceWidth: number
   faceHeight: number
   extra: TribalExtra
