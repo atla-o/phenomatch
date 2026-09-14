@@ -163,13 +163,15 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
     )
   }
 
-  const othersLive = Math.max(0, liveCount - 1)
+  const live = Number.isFinite(Number(liveCount)) ? Number(liveCount) : 0
+  const similar = Number.isFinite(Number(similarCount)) ? Number(similarCount) : 0
+  const othersLive = Math.max(0, live - 1)
   const presenceLine =
     othersLive === 0
       ? 'You are the only person live.'
-      : similarCount === 0
+      : similar === 0
         ? `${othersLive} live now · none at 50%+ similarity.`
-        : `${othersLive} live now · ${similarCount} at 50%+.`
+        : `${othersLive} live now · ${similar} at 50%+.`
 
   return (
     <div className="anon">
