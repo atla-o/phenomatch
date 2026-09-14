@@ -16,7 +16,7 @@ These scores move with lighting, pose, makeup, and camera white-balance. They ar
 
 | Signal | What is measured | Mapping |
 | --- | --- | --- |
-| Bone | Jaw width, cheekbone width, midface length, inter-ocular spacing, facial thirds | Aspect-corrected landmark ratios. |
+| Bone | Jaw width, cheekbone width, midface length, inter-ocular spacing, nose-bridge spacing, facial thirds | Aspect-corrected landmark ratios. Primary heritage signal. |
 | Cartilage | Nose length/projection; ear length when landmarks exist | Longer visible cartilage → higher cartilage score, blended into nose. |
 | Hair thickness | Luminance spread in the hair band | Texture/density proxy, blended into hair pattern. |
 | Shade | Skin and iris patches | Melanin = inverse CIE L*; eye color = lightness + blue/green hue. |

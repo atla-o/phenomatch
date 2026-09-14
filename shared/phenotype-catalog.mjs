@@ -282,15 +282,15 @@ export const phenotypeTypes = [
 export const phenotypeTypeById = Object.fromEntries(phenotypeTypes.map((type) => [type.id, type]))
 
 const TRAIT_WEIGHTS = {
-  melanin: 1.15,
-  'eye-color': 1.0,
-  hair: 0.85,
-  nose: 1.05,
-  lips: 1.05,
-  facial: 1.0,
-  jaw: 0.95,
-  cheekbone: 1.0,
-  tribe: 1.35,
+  melanin: 0.75,
+  'eye-color': 0.55,
+  hair: 1.2,
+  nose: 1.2,
+  lips: 0.65,
+  facial: 1.25,
+  jaw: 1.25,
+  cheekbone: 1.25,
+  tribe: 1.4,
 }
 
 export function traitDistance(a, b) {
@@ -335,7 +335,7 @@ export function assignPhenotypeFromScan(input, { suggestedTypeId, extra, gene, s
   const visual = buildVisualTraits(traits)
   const tribeTrait = visual.find((trait) => trait.id === 'tribe')
   if (tribeTrait) {
-    tribeTrait.detail = `${type.name} · heritage cluster from visible bone, shade, and tribe`
+    tribeTrait.detail = `${type.name} · heritage cluster from bone, hair, cartilage, and shade`
   }
   const genealogyLikelihood = Math.max(
     confidence,
@@ -578,15 +578,11 @@ export const scanSteps = [
   'Opening camera…',
   'Loading optical pipeline…',
   'Finding a face…',
-  'Analyzing melanin distribution…',
-  'Reading eye color…',
-  'Assessing hair pattern…',
-  'Mapping nose shape…',
-  'Measuring lip fullness…',
-  'Mapping facial structure…',
-  'Reading jaw line…',
-  'Assessing cheekbone structure…',
-  'Inferring tribal markers…',
-  'Assigning catalog type…',
+  'Measuring bone spacing…',
+  'Scoring hair thickness…',
+  'Measuring cartilage length…',
+  'Reading feature shade…',
+  'Inferring tribal identifiers…',
+  'Assigning heritage type…',
   'Saving cluster profile…',
 ]

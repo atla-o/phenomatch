@@ -85,7 +85,16 @@ test('phenotype scan with analyzed traits assigns nearest catalog type', async (
         jawLine: 68,
         cheekboneStructure: 84,
       },
-      metrics: { extra: { intercanthalIndex: 0.22, mouthIndex: 0.28 }, source: 'still' },
+      metrics: {
+        extra: {
+          intercanthalIndex: 0.22,
+          mouthIndex: 0.28,
+          boneIndex: 78,
+          cartilage: 32,
+          hairThickness: 28,
+        },
+        source: 'still',
+      },
     }),
   })
   assert.equal(fair.status, 200)
@@ -113,7 +122,16 @@ test('phenotype scan with analyzed traits assigns nearest catalog type', async (
         jawLine: 56,
         cheekboneStructure: 50,
       },
-      metrics: { extra: { intercanthalIndex: 0.34, mouthIndex: 0.42 }, source: 'still' },
+      metrics: {
+        extra: {
+          intercanthalIndex: 0.34,
+          mouthIndex: 0.42,
+          boneIndex: 48,
+          cartilage: 82,
+          hairThickness: 86,
+        },
+        source: 'still',
+      },
     }),
   })
   const deepBody = await deep.json()

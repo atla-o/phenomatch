@@ -13,15 +13,15 @@ type Props = {
 type Phase = 'preparing' | 'scanning' | 'complete' | 'error'
 
 const REVEAL_STEPS = [
-  { key: 'melanin' as const, label: 'Analyzing melanin distribution…', progress: 48 },
-  { key: 'eyeColor' as const, label: 'Reading eye color…', progress: 56 },
-  { key: 'hairPattern' as const, label: 'Assessing hair pattern…', progress: 62 },
-  { key: 'noseShape' as const, label: 'Mapping nose shape…', progress: 68 },
-  { key: 'lipFullness' as const, label: 'Measuring lip fullness…', progress: 74 },
-  { key: 'facialStructure' as const, label: 'Mapping facial structure…', progress: 80 },
-  { key: 'jawLine' as const, label: 'Reading jaw line…', progress: 84 },
-  { key: 'cheekboneStructure' as const, label: 'Assessing cheekbone structure…', progress: 88 },
-  { key: 'tribe' as const, label: 'Inferring tribal markers…', progress: 93 },
+  { key: 'facialStructure' as const, label: 'Measuring bone spacing…', progress: 48 },
+  { key: 'jawLine' as const, label: 'Reading jaw width…', progress: 56 },
+  { key: 'cheekboneStructure' as const, label: 'Reading cheekbone width…', progress: 64 },
+  { key: 'hairPattern' as const, label: 'Scoring hair thickness…', progress: 72 },
+  { key: 'noseShape' as const, label: 'Measuring cartilage length…', progress: 80 },
+  { key: 'melanin' as const, label: 'Reading feature shade…', progress: 86 },
+  { key: 'eyeColor' as const, label: 'Sampling iris shade…', progress: 90 },
+  { key: 'lipFullness' as const, label: 'Measuring lip fullness…', progress: 93 },
+  { key: 'tribe' as const, label: 'Inferring tribal identifiers…', progress: 96 },
 ]
 
 function wait(ms: number) {

@@ -39,6 +39,9 @@ export type TribalExtra = {
   hairThickness?: number
   midfaceScore?: number
   interocularScore?: number
+  bridgeIndex?: number
+  bridgeScore?: number
+  thirdsScore?: number
   landmarkCount?: number
 }
 
@@ -60,7 +63,13 @@ export function colorsFromImage(
   image: { width: number; height: number; data: ArrayLike<number> },
   landmarks: Array<{ x: number; y: number; z?: number }>,
   geom?: { faceHeight?: number },
-): { melanin: number; eyeColor: number; hairPattern: number; samples: Record<string, number> }
+): {
+  melanin: number
+  eyeColor: number
+  hairPattern: number
+  hairThickness: number
+  samples: Record<string, number>
+}
 
 export function tribeScoreFromTraits(traits?: Partial<TraitVector>, extra?: TribalExtra): number
 export function describeTribalMarkers(

@@ -13,10 +13,10 @@
  * - Nose / lips / facial / jaw / cheekbone: 2D landmark ratios. Distances
  *   are aspect-corrected so landscape frames do not collapse facial
  *   structure. Pose, focal length, and expression still move them.
- * - Tribe: a derived cluster index from pigmentation, iris lightness,
- *   breadth (nose+lips), relief (jaw+cheekbone), plus extra intercanthal
- *   and mouth-width ratios. It is a visible-identifier coordinate used to
- *   assign a catalog type — not ethnicity, DNA, or tribal membership.
+ * - Tribe: a derived cluster index. Primary inputs are bone spacing,
+ *   hair thickness, and cartilage length; shade is supporting. It is a
+ *   visible-identifier coordinate used to assign a heritage type — not
+ *   ethnicity, DNA, or tribal membership.
  */
 
 export const TRAIT_OBJECT_KEYS = [
@@ -78,10 +78,13 @@ export const LM = {
   leftCheek: 234,
   rightCheek: 454,
   noseTip: 1,
-  noseBridge: 168,
+  nasion: 168,
+  noseBridge: 6,
   noseBottom: 2,
   leftNostril: 98,
   rightNostril: 327,
+  leftNoseBridge: 48,
+  rightNoseBridge: 278,
   leftEyeOuter: 33,
   leftEyeInner: 133,
   rightEyeInner: 362,
@@ -98,7 +101,6 @@ export const LM = {
   rightCheekbone: 345,
   leftJaw: 172,
   rightJaw: 397,
-  noseBridge: 6,
   glabella: 9,
   leftEarTop: 162,
   leftEarLobe: 132,
@@ -154,7 +156,7 @@ export function geometryFromLandmarks(landmarks, image) {
   const rightCheekbone = point(landmarks, LM.rightCheekbone)
   const leftEyeInner = point(landmarks, LM.leftEyeInner)
   const rightEyeInner = point(landmarks, LM.rightEyeInner)
-  const noseBridge = point(landmarks, LM.noseBridge)
+  const noseBridge = point(landmarks, LM.noseBridge) || point(landmarks, LM.nasion)
   const noseTip = point(landmarks, LM.noseTip)
   const noseBottom = point(landmarks, LM.noseBottom)
   const glabella = point(landmarks, LM.glabella) || forehead
@@ -162,6 +164,8 @@ export function geometryFromLandmarks(landmarks, image) {
   const leftEarLobe = point(landmarks, LM.leftEarLobe)
   const rightEarTop = point(landmarks, LM.rightEarTop)
   const rightEarLobe = point(landmarks, LM.rightEarLobe)
+  const leftBridge = point(landmarks, LM.leftNoseBridge)
+  const rightBridge = point(landmarks, LM.rightNoseBridge)
 
   const faceWidth = dist(leftCheek, rightCheek, aspect) || 0.4
   const faceHeight = dist(forehead, chin, aspect) || 0.6
@@ -179,18 +183,32 @@ export function geometryFromLandmarks(landmarks, image) {
   const leftEar = dist(leftEarTop, leftEarLobe, aspect)
   const rightEar = dist(rightEarTop, rightEarLobe, aspect)
   const earLength = leftEar && rightEar ? (leftEar + rightEar) / 2 : leftEar || rightEar
+  const noseBridgeWidth = dist(leftBridge, rightBridge, aspect)
 
   const midfaceScore = lerpScore(midfaceLength / faceHeight, 0.22, 0.42)
   const interocularScore = lerpScore(intercanthal / faceWidth, 0.18, 0.4)
+  const bridgeScore = lerpScore(noseBridgeWidth / faceWidth, 0.08, 0.28)
+  const thirdSum = upperThird + midThird + lowerThird || 1
+  const thirdsBalance =
+    1 -
+    (Math.abs(upperThird / thirdSum - 1 / 3) +
+      Math.abs(midThird / thirdSum - 1 / 3) +
+      Math.abs(lowerThird / thirdSum - 1 / 3)) /
+      2
+  const thirdsScore = clampScore(
+    midfaceScore * 0.55 + lerpScore(thirdsBalance, 0.55, 0.98) * 0.45,
+  )
   const cartilage = clampScore(
     lerpScore(noseLength / faceHeight, 0.12, 0.34) * 0.7 +
       lerpScore(earLength / faceHeight, 0.12, 0.28) * 0.3,
   )
   const boneIndex = clampScore(
-    lerpScore(jawWidth / faceWidth, 0.62, 0.98) * 0.28 +
-      lerpScore(cheekboneWidth / (jawWidth || faceWidth), 0.92, 1.28) * 0.28 +
-      midfaceScore * 0.24 +
-      interocularScore * 0.2,
+    lerpScore(jawWidth / faceWidth, 0.62, 0.98) * 0.22 +
+      lerpScore(cheekboneWidth / (jawWidth || faceWidth), 0.92, 1.28) * 0.22 +
+      midfaceScore * 0.16 +
+      interocularScore * 0.14 +
+      bridgeScore * 0.14 +
+      thirdsScore * 0.12,
   )
 
   const extra = {
@@ -200,6 +218,7 @@ export function geometryFromLandmarks(landmarks, image) {
     midfaceIndex: midfaceLength / faceHeight,
     noseLengthIndex: noseLength / faceHeight,
     earIndex: earLength / faceHeight,
+    bridgeIndex: noseBridgeWidth / faceWidth,
     thirds: {
       upper: upperThird / faceHeight,
       mid: midThird / faceHeight,
@@ -209,6 +228,8 @@ export function geometryFromLandmarks(landmarks, image) {
     cartilage,
     midfaceScore,
     interocularScore,
+    bridgeScore,
+    thirdsScore,
   }
 
   return {
@@ -318,25 +339,18 @@ export function colorsFromImage(image, landmarks, geom) {
     .filter(Boolean)
   const iris = meanLab(eyeSamples)
 
-  const hairPoint = forehead
-    ? {
-        x: forehead.x,
-        y: Math.max(0.02, forehead.y - (geom?.faceHeight || 0.55) * 0.22),
-      }
-    : { x: 0.5, y: 0.08 }
-  const hairLeft = { x: Math.max(0.12, hairPoint.x - 0.12), y: hairPoint.y }
-  const hairRight = { x: Math.min(0.88, hairPoint.x + 0.12), y: hairPoint.y }
-  const hairSamples = [hairPoint, hairLeft, hairRight]
-    .map((p) => samplePatch(image, p.x, p.y, 6))
+  const hairPoints = hairBandPoints(forehead, geom?.faceHeight || 0.55)
+  const hairSamples = hairPoints
+    .map((p) => samplePatch(image, p.x, p.y, 5))
     .filter(Boolean)
   const hair = meanLab(hairSamples)
-  const hairThickness = hairLuminanceSpread(image, [hairPoint, hairLeft, hairRight])
+  const hairThickness = hairThicknessFromImage(image, hairPoints, skin?.L)
 
   return {
     melanin: skin ? lerpScore(skin.L, 84, 22) : 50,
     eyeColor: irisHueScore(iris),
     hairPattern: clampScore(
-      (hair ? lerpScore(hair.L, 78, 8) : 50) * 0.62 + hairThickness * 0.38,
+      (hair ? lerpScore(hair.L, 78, 8) : 50) * 0.4 + hairThickness * 0.6,
     ),
     hairThickness,
     samples: {
@@ -347,16 +361,34 @@ export function colorsFromImage(image, landmarks, geom) {
   }
 }
 
-function hairLuminanceSpread(image, points) {
+function hairBandPoints(forehead, faceHeight) {
+  const cx = forehead?.x ?? 0.5
+  const y0 = Math.max(0.02, (forehead?.y ?? 0.28) - faceHeight * 0.28)
+  const y1 = Math.max(0.03, (forehead?.y ?? 0.28) - faceHeight * 0.12)
+  return [
+    { x: cx, y: y0 },
+    { x: Math.max(0.1, cx - 0.1), y: y0 },
+    { x: Math.min(0.9, cx + 0.1), y: y0 },
+    { x: cx, y: y1 },
+    { x: Math.max(0.08, cx - 0.16), y: y1 },
+    { x: Math.min(0.92, cx + 0.16), y: y1 },
+  ]
+}
+
+function hairThicknessFromImage(image, points, skinL) {
   const values = []
   for (const p of points) {
-    const sample = samplePatch(image, p.x, p.y, 6)
+    const sample = samplePatch(image, p.x, p.y, 5)
     if (sample) values.push(rgbToLab(sample.r, sample.g, sample.b).L)
   }
-  if (values.length < 2) return 40
+  if (!values.length) return 40
   const mean = values.reduce((sum, v) => sum + v, 0) / values.length
   const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length
-  return lerpScore(Math.sqrt(variance), 1.5, 18)
+  const texture = lerpScore(Math.sqrt(variance), 1.2, 16)
+  const density = Number.isFinite(skinL)
+    ? lerpScore(Math.max(0, skinL - mean), 2, 38)
+    : lerpScore(mean, 72, 10)
+  return clampScore(texture * 0.55 + density * 0.45)
 }
 
 function midpoint(a, b) {
@@ -381,19 +413,23 @@ export function tribeScoreFromTraits(traits = {}, extra = {}) {
       lerpScore(Number(extra.mouthIndex) || 0.32, 0.24, 0.5) * 0.5,
   )
   return clampScore(
-    shade * 0.2 +
-      (100 - iris) * 0.08 +
-      bone * 0.3 +
-      cartilage * 0.16 +
-      hairThickness * 0.12 +
-      spacing * 0.14,
+    shade * 0.14 +
+      (100 - iris) * 0.06 +
+      bone * 0.34 +
+      cartilage * 0.18 +
+      hairThickness * 0.16 +
+      spacing * 0.12,
   )
 }
 
 export function describeTribalMarkers(traits = {}, extra = {}, type = null) {
   const tribe = clampScore(traits.tribe ?? tribeScoreFromTraits(traits, extra))
-  const breadth = clampScore(mix(Number(traits.noseShape) || 0, Number(traits.lipFullness) || 0, 0.55))
-  const relief = clampScore(mix(Number(traits.cheekboneStructure) || 0, Number(traits.jawLine) || 0, 0.55))
+  const bone = clampScore(
+    extra.boneIndex ??
+      mix(Number(traits.jawLine) || 0, Number(traits.cheekboneStructure) || 0, 0.5),
+  )
+  const cartilage = clampScore(extra.cartilage ?? traits.noseShape)
+  const hair = clampScore(extra.hairThickness ?? traits.hairPattern)
   return [
     {
       id: 'tribe',
@@ -401,36 +437,36 @@ export function describeTribalMarkers(traits = {}, extra = {}, type = null) {
       value: tribe,
       category: 'tribal',
       detail: type
-        ? `${type.name} · heritage cluster from visible bone, shade, and tribe`
-        : 'Heritage cluster from visible bone, shade, and tribe',
+        ? `${type.name} · heritage cluster from bone, hair, cartilage, and shade`
+        : 'Heritage cluster from bone, hair, cartilage, and shade',
+    },
+    {
+      id: 'bone-marker',
+      label: 'Bone spacing',
+      value: bone,
+      category: 'tribal',
+      detail: 'Jaw, cheek, midface, inter-ocular, nose bridge, facial thirds',
+    },
+    {
+      id: 'cartilage-marker',
+      label: 'Cartilage length',
+      value: cartilage,
+      category: 'tribal',
+      detail: 'Nose and ear cartilage proxies',
+    },
+    {
+      id: 'hair-marker',
+      label: 'Hair thickness',
+      value: hair,
+      category: 'tribal',
+      detail: 'Hair-band density and texture proxy',
     },
     {
       id: 'melanin-marker',
-      label: 'Melanin cluster',
+      label: 'Feature shade',
       value: clampScore(traits.melanin),
       category: 'tribal',
-      detail: 'Skin-patch lightness on this frame',
-    },
-    {
-      id: 'iris-marker',
-      label: 'Iris lattice',
-      value: clampScore(traits.eyeColor),
-      category: 'tribal',
-      detail: 'Iris lightness and blue/green hue',
-    },
-    {
-      id: 'structure-marker',
-      label: 'Breadth index',
-      value: breadth,
-      category: 'tribal',
-      detail: 'Nose width and lip fullness ratios',
-    },
-    {
-      id: 'relief-marker',
-      label: 'Relief index',
-      value: relief,
-      category: 'tribal',
-      detail: 'Cheekbone and jaw geometry',
+      detail: 'Supporting shade of features',
     },
   ]
 }
@@ -451,11 +487,11 @@ export function scoreFace(landmarks, image) {
     melanin: colors.melanin,
     eyeColor: colors.eyeColor,
     hairPattern: colors.hairPattern,
-    noseShape: clampScore(geom.noseShape * 0.55 + (extra.cartilage || geom.noseShape) * 0.45),
+    noseShape: clampScore(geom.noseShape * 0.4 + extra.cartilage * 0.6),
     lipFullness: geom.lipFullness,
-    facialStructure: geom.facialStructure,
-    jawLine: geom.jawLine,
-    cheekboneStructure: geom.cheekboneStructure,
+    facialStructure: clampScore(geom.facialStructure * 0.45 + extra.boneIndex * 0.55),
+    jawLine: clampScore(geom.jawLine * 0.7 + extra.boneIndex * 0.3),
+    cheekboneStructure: clampScore(geom.cheekboneStructure * 0.7 + extra.boneIndex * 0.3),
     tribe: 0,
   }
   traits.tribe = tribeScoreFromTraits(traits, extra)
