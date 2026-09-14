@@ -9,6 +9,8 @@ RUN npm ci
 COPY index.html vite.config.ts tsconfig.json tsconfig.app.json tsconfig.node.json ./
 COPY public ./public
 COPY src ./src
+# Vite + tsc import the Antiporn detector and Anon WebRTC helpers from here.
+COPY shared ./shared
 RUN npm run build
 
 FROM node:22-bookworm-slim
@@ -27,6 +29,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY server ./server
+# server/umingle.mjs loads ../shared/anon-live.mjs at startup.
+COPY shared ./shared
 COPY --from=build /app/dist ./dist
 
 EXPOSE 8080
