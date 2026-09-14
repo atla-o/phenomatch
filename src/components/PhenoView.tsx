@@ -3,7 +3,8 @@ import type { ChangeEvent } from 'react'
 import type { Phenotype } from '../types'
 import { uploadGene } from '../api/client'
 import { ScanPanel } from './ScanPanel'
-import { PhenotypeTraits, visualTraits } from './PhenotypeTraits'
+import { HeritageReadout } from './HeritageReadout'
+import { PhenotypeTraits } from './PhenotypeTraits'
 
 type Props = {
   phenotype: Phenotype
@@ -121,9 +122,8 @@ export function PhenoView({
       {!hasProfile && !scanning && (
         <div className="pheno__intro">
           <p className="pheno__intro-copy">
-            Scan visible identifiers — melanin, eye color, facial structure, tribe,
-            and genealogy likelihood. Scores are cluster similarity, not a medical
-            reading. Upload a gene file to link genealogy.
+            Scan bone spacing, cartilage, hair, and shade to guess a heritage
+            type you can identify with. Cluster fit, not a laboratory genome.
           </p>
           <button type="button" className="btn btn--outline" onClick={startScan}>
             Scan type
@@ -136,8 +136,9 @@ export function PhenoView({
       {hasProfile && !scanning && (
         <>
           <div className="pheno__card">
-            <h3 className="pheno__section-title">Visual traits</h3>
-            <PhenotypeTraits traits={visualTraits(phenotype)} />
+            <HeritageReadout phenotype={phenotype} />
+            <h3 className="pheno__section-title">Visible traits</h3>
+            <PhenotypeTraits traits={phenotype.traits} compact />
             {phenotype.tribalMarkers && phenotype.tribalMarkers.length > 0 && (
               <div className="pheno__markers" aria-label="Tribal markers">
                 {phenotype.tribalMarkers.map((marker) => (

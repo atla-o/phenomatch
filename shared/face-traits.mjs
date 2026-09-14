@@ -97,6 +97,12 @@ export const LM = {
   rightCheekbone: 345,
   leftJaw: 172,
   rightJaw: 397,
+  noseBridge: 6,
+  glabella: 9,
+  leftEarTop: 162,
+  leftEarLobe: 132,
+  rightEarTop: 389,
+  rightEarLobe: 361,
   leftSkin: 50,
   rightSkin: 280,
 }
@@ -147,20 +153,61 @@ export function geometryFromLandmarks(landmarks, image) {
   const rightCheekbone = point(landmarks, LM.rightCheekbone)
   const leftEyeInner = point(landmarks, LM.leftEyeInner)
   const rightEyeInner = point(landmarks, LM.rightEyeInner)
+  const noseBridge = point(landmarks, LM.noseBridge)
+  const noseTip = point(landmarks, LM.noseTip)
+  const noseBottom = point(landmarks, LM.noseBottom)
+  const glabella = point(landmarks, LM.glabella) || forehead
+  const leftEarTop = point(landmarks, LM.leftEarTop)
+  const leftEarLobe = point(landmarks, LM.leftEarLobe)
+  const rightEarTop = point(landmarks, LM.rightEarTop)
+  const rightEarLobe = point(landmarks, LM.rightEarLobe)
 
   const faceWidth = dist(leftCheek, rightCheek, aspect) || 0.4
   const faceHeight = dist(forehead, chin, aspect) || 0.6
   const noseWidth = dist(leftNostril, rightNostril, aspect)
+  const noseLength = dist(noseBridge || glabella, noseTip || noseBottom, aspect)
   const mouthWidth = dist(mouthLeft, mouthRight, aspect) || 0.2
   const lipHeight = dist(upperLip, lowerLip, aspect)
   const jawWidth = dist(leftJaw, rightJaw, aspect)
   const cheekboneWidth = dist(leftCheekbone, rightCheekbone, aspect)
   const intercanthal = dist(leftEyeInner, rightEyeInner, aspect)
+  const midfaceLength = dist(glabella, noseBottom || noseTip, aspect)
+  const upperThird = dist(forehead, glabella, aspect)
+  const midThird = dist(glabella, noseBottom || noseTip, aspect)
+  const lowerThird = dist(noseBottom || noseTip, chin, aspect)
+  const leftEar = dist(leftEarTop, leftEarLobe, aspect)
+  const rightEar = dist(rightEarTop, rightEarLobe, aspect)
+  const earLength = leftEar && rightEar ? (leftEar + rightEar) / 2 : leftEar || rightEar
+
+  const midfaceScore = lerpScore(midfaceLength / faceHeight, 0.22, 0.42)
+  const interocularScore = lerpScore(intercanthal / faceWidth, 0.18, 0.4)
+  const cartilage = clampScore(
+    lerpScore(noseLength / faceHeight, 0.12, 0.34) * 0.7 +
+      lerpScore(earLength / faceHeight, 0.12, 0.28) * 0.3,
+  )
+  const boneIndex = clampScore(
+    lerpScore(jawWidth / faceWidth, 0.62, 0.98) * 0.28 +
+      lerpScore(cheekboneWidth / (jawWidth || faceWidth), 0.92, 1.28) * 0.28 +
+      midfaceScore * 0.24 +
+      interocularScore * 0.2,
+  )
 
   const extra = {
     intercanthalIndex: intercanthal / faceWidth,
     mouthIndex: mouthWidth / faceWidth,
     faceIndex: faceWidth / faceHeight,
+    midfaceIndex: midfaceLength / faceHeight,
+    noseLengthIndex: noseLength / faceHeight,
+    earIndex: earLength / faceHeight,
+    thirds: {
+      upper: upperThird / faceHeight,
+      mid: midThird / faceHeight,
+      lower: lowerThird / faceHeight,
+    },
+    boneIndex,
+    cartilage,
+    midfaceScore,
+    interocularScore,
   }
 
   return {
@@ -282,11 +329,15 @@ export function colorsFromImage(image, landmarks, geom) {
     .map((p) => samplePatch(image, p.x, p.y, 6))
     .filter(Boolean)
   const hair = meanLab(hairSamples)
+  const hairThickness = hairLuminanceSpread(image, [hairPoint, hairLeft, hairRight])
 
   return {
     melanin: skin ? lerpScore(skin.L, 84, 22) : 50,
     eyeColor: irisHueScore(iris),
-    hairPattern: hair ? lerpScore(hair.L, 78, 8) : 50,
+    hairPattern: clampScore(
+      (hair ? lerpScore(hair.L, 78, 8) : 50) * 0.62 + hairThickness * 0.38,
+    ),
+    hairThickness,
     samples: {
       skinCount: skinSamples.length,
       eyeCount: eyeSamples.length,
@@ -295,26 +346,46 @@ export function colorsFromImage(image, landmarks, geom) {
   }
 }
 
+function hairLuminanceSpread(image, points) {
+  const values = []
+  for (const p of points) {
+    const sample = samplePatch(image, p.x, p.y, 6)
+    if (sample) values.push(rgbToLab(sample.r, sample.g, sample.b).L)
+  }
+  if (values.length < 2) return 40
+  const mean = values.reduce((sum, v) => sum + v, 0) / values.length
+  const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length
+  return lerpScore(Math.sqrt(variance), 1.5, 18)
+}
+
 function midpoint(a, b) {
   if (!a || !b) return a || b || null
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
 }
 
 export function tribeScoreFromTraits(traits = {}, extra = {}) {
-  const pigmentation = mix(Number(traits.melanin) || 0, Number(traits.hairPattern) || 0, 0.72)
+  const shade = mix(Number(traits.melanin) || 0, Number(traits.hairPattern) || 0, 0.7)
   const iris = Number(traits.eyeColor) || 0
-  const breadth = mix(Number(traits.noseShape) || 0, Number(traits.lipFullness) || 0, 0.55)
-  const relief = mix(Number(traits.cheekboneStructure) || 0, Number(traits.jawLine) || 0, 0.55)
-  const extraScore = clampScore(
+  const bone = Number.isFinite(Number(extra.boneIndex))
+    ? Number(extra.boneIndex)
+    : mix(Number(traits.jawLine) || 0, Number(traits.cheekboneStructure) || 0, 0.5)
+  const cartilage = Number.isFinite(Number(extra.cartilage))
+    ? Number(extra.cartilage)
+    : Number(traits.noseShape) || 0
+  const hairThickness = Number.isFinite(Number(extra.hairThickness))
+    ? Number(extra.hairThickness)
+    : Number(traits.hairPattern) || 0
+  const spacing = clampScore(
     lerpScore(Number(extra.intercanthalIndex) || 0.28, 0.18, 0.4) * 0.5 +
       lerpScore(Number(extra.mouthIndex) || 0.32, 0.24, 0.5) * 0.5,
   )
   return clampScore(
-    pigmentation * 0.34 +
-      (100 - iris) * 0.18 +
-      breadth * 0.24 +
-      relief * 0.12 +
-      extraScore * 0.12,
+    shade * 0.2 +
+      (100 - iris) * 0.08 +
+      bone * 0.3 +
+      cartilage * 0.16 +
+      hairThickness * 0.12 +
+      spacing * 0.14,
   )
 }
 
@@ -329,8 +400,8 @@ export function describeTribalMarkers(traits = {}, extra = {}, type = null) {
       value: tribe,
       category: 'tribal',
       detail: type
-        ? `${type.name} · visible-identifier cluster, not ancestry`
-        : 'Visible-identifier cluster, not ancestry',
+        ? `${type.name} · heritage cluster from visible bone, shade, and tribe`
+        : 'Heritage cluster from visible bone, shade, and tribe',
     },
     {
       id: 'melanin-marker',
@@ -371,23 +442,68 @@ export function scoreFace(landmarks, image) {
   }
   const geom = geometryFromLandmarks(landmarks, image)
   const colors = colorsFromImage(image, landmarks, geom)
+  const extra = {
+    ...geom.extra,
+    hairThickness: colors.hairThickness,
+  }
   const traits = {
     melanin: colors.melanin,
     eyeColor: colors.eyeColor,
     hairPattern: colors.hairPattern,
-    noseShape: geom.noseShape,
+    noseShape: clampScore(geom.noseShape * 0.55 + (extra.cartilage || geom.noseShape) * 0.45),
     lipFullness: geom.lipFullness,
     facialStructure: geom.facialStructure,
     jawLine: geom.jawLine,
     cheekboneStructure: geom.cheekboneStructure,
     tribe: 0,
   }
-  traits.tribe = tribeScoreFromTraits(traits, geom.extra)
+  traits.tribe = tribeScoreFromTraits(traits, extra)
   return {
     traits,
-    extra: geom.extra,
+    extra,
     geom,
     colors,
     landmarkCount: landmarks.length,
+  }
+}
+
+const HERITAGE_CALLS = ['A/A', 'A/G', 'G/G', 'C/T', 'T/T']
+
+function heritageCall(value, salt) {
+  const bucket = Math.min(4, Math.floor(clampScore(value) / 20))
+  return HERITAGE_CALLS[(bucket + salt) % HERITAGE_CALLS.length]
+}
+
+export function buildGenomeReadout(traits = {}, extra = {}, type = null, confidence = 0) {
+  const tribe = clampScore(traits.tribe ?? tribeScoreFromTraits(traits, extra))
+  const cartilage = clampScore(extra.cartilage ?? traits.noseShape)
+  const hair = clampScore(extra.hairThickness ?? traits.hairPattern)
+  const shade = clampScore(traits.melanin)
+  const midface = clampScore(extra.midfaceScore ?? traits.facialStructure)
+  const rows = [
+    { id: 'PM-BONE-01', group: 'bone', locus: 'mandible.width', label: 'Jaw spacing', value: clampScore(traits.jawLine), salt: 1 },
+    { id: 'PM-BONE-02', group: 'bone', locus: 'zygoma.width', label: 'Cheekbone spacing', value: clampScore(traits.cheekboneStructure), salt: 2 },
+    { id: 'PM-BONE-03', group: 'bone', locus: 'midface.length', label: 'Midface length', value: midface, salt: 3 },
+    { id: 'PM-CART-01', group: 'cartilage', locus: 'nasal.length', label: 'Nasal cartilage', value: cartilage, salt: 4 },
+    { id: 'PM-HAIR-01', group: 'hair', locus: 'hair.density', label: 'Hair thickness', value: hair, salt: 5 },
+    { id: 'PM-SHADE-01', group: 'shade', locus: 'skin.lightness', label: 'Feature shade', value: shade, salt: 6 },
+    { id: 'PM-TRIBE-01', group: 'tribe', locus: 'cluster.tribe', label: 'Tribal identifier', value: tribe, salt: 7 },
+  ]
+  const markers = rows.map((row) => ({
+    id: row.id,
+    group: row.group,
+    locus: row.locus,
+    label: row.label,
+    value: row.value,
+    call: heritageCall(row.value, row.salt),
+  }))
+  return {
+    kind: 'phenotype-derived',
+    headline: type?.name || 'Heritage type',
+    code: type?.code || '',
+    clusterFit: clampScore(confidence),
+    note: 'Illustrative heritage markers from bone, shade, and tribal identifiers. Not a laboratory genome.',
+    markers,
+    bands: markers.map((marker) => ({ id: marker.id, group: marker.group, value: marker.value })),
   }
 }

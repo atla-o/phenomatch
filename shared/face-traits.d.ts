@@ -31,6 +31,14 @@ export type TribalExtra = {
   intercanthalIndex?: number
   mouthIndex?: number
   faceIndex?: number
+  midfaceIndex?: number
+  noseLengthIndex?: number
+  earIndex?: number
+  boneIndex?: number
+  cartilage?: number
+  hairThickness?: number
+  midfaceScore?: number
+  interocularScore?: number
   landmarkCount?: number
 }
 
@@ -60,6 +68,20 @@ export function describeTribalMarkers(
   extra?: TribalExtra,
   type?: { name?: string } | null,
 ): Array<{ id: string; label: string; value: number; category: 'tribal'; detail?: string }>
+export function buildGenomeReadout(
+  traits?: Partial<TraitVector>,
+  extra?: TribalExtra,
+  type?: { name?: string; code?: string } | null,
+  confidence?: number,
+): {
+  kind: 'phenotype-derived'
+  headline: string
+  code: string
+  clusterFit: number
+  note: string
+  markers: Array<{ id: string; group: string; locus: string; label: string; value: number; call: string }>
+  bands: Array<{ id: string; group: string; value: number }>
+}
 export function scoreFace(
   landmarks: Array<{ x: number; y: number; z?: number }>,
   image: { width: number; height: number; data: ArrayLike<number> },

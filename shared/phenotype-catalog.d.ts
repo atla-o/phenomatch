@@ -9,6 +9,7 @@ export {
   clampScore,
   describeTribalMarkers,
   tribeScoreFromTraits,
+  buildGenomeReadout,
 } from './face-traits.mjs'
 
 export type PhenotypeType = {

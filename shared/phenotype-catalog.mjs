@@ -8,6 +8,7 @@ import {
   TRAIT_KEY_BY_ID,
   TRAIT_LABELS,
   TRAIT_OBJECT_KEYS,
+  buildGenomeReadout,
   clampScore,
   describeTribalMarkers,
   tribeScoreFromTraits,
@@ -18,6 +19,7 @@ export {
   TRAIT_KEY_BY_ID,
   TRAIT_LABELS,
   TRAIT_OBJECT_KEYS,
+  buildGenomeReadout,
   clampScore,
   describeTribalMarkers,
   tribeScoreFromTraits,
@@ -333,7 +335,7 @@ export function assignPhenotypeFromScan(input, { suggestedTypeId, extra, gene, s
   const visual = buildVisualTraits(traits)
   const tribeTrait = visual.find((trait) => trait.id === 'tribe')
   if (tribeTrait) {
-    tribeTrait.detail = `${type.name} · visible-identifier cluster, not ancestry`
+    tribeTrait.detail = `${type.name} · heritage cluster from visible bone, shade, and tribe`
   }
   const genealogyLikelihood = Math.max(
     confidence,
@@ -354,6 +356,7 @@ export function assignPhenotypeFromScan(input, { suggestedTypeId, extra, gene, s
     genealogyLikelihood,
     genealogyLineage,
     tribalMarkers: describeTribalMarkers(traits, extra, type),
+    genomeReadout: buildGenomeReadout(traits, extra, type, confidence),
     scanConfidence: confidence,
     scan: {
       source: source || 'camera',

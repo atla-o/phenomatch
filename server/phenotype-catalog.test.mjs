@@ -103,8 +103,21 @@ describe('phenotype catalog', () => {
     assert.equal(phenotype.code, 'GN-WG11')
     const tribe = phenotype.traits.find((trait) => trait.id === 'tribe')
     assert.ok(tribe?.value)
-    assert.match(String(tribe.detail), /visible-identifier/)
+    assert.match(String(tribe.detail), /heritage cluster/)
     assert.ok(phenotype.tribalMarkers.some((marker) => marker.id === 'tribe'))
     assert.equal(hasAnalyzedTraits(phenotype.traits), true)
+    assert.equal(phenotype.genomeReadout?.headline, 'West African Gulf XI')
+    assert.ok(phenotype.genomeReadout?.markers.some((marker) => marker.id === 'PM-TRIBE-01'))
+    const again = assignPhenotypeFromScan({
+      melanin: 86,
+      eyeColor: 16,
+      hairPattern: 88,
+      noseShape: 78,
+      lipFullness: 82,
+      facialStructure: 64,
+      jawLine: 58,
+      cheekboneStructure: 52,
+    })
+    assert.deepEqual(again.genomeReadout, phenotype.genomeReadout)
   })
 })

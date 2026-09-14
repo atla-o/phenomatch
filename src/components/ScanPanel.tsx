@@ -187,6 +187,10 @@ export function ScanPanel({ onComplete, onFail }: Props) {
             intercanthalIndex: analyzed.extra.intercanthalIndex,
             mouthIndex: analyzed.extra.mouthIndex,
             faceIndex: analyzed.extra.faceIndex,
+            boneIndex: analyzed.extra.boneIndex,
+            cartilage: analyzed.extra.cartilage,
+            hairThickness: analyzed.extra.hairThickness,
+            midfaceScore: analyzed.extra.midfaceScore,
           },
           landmarkCount: analyzed.landmarkCount,
           source: analyzed.source,
@@ -248,9 +252,9 @@ export function ScanPanel({ onComplete, onFail }: Props) {
       <div className="scan-panel__intro">
         <h3 className="scan-panel__heading">Phenotype scan</h3>
         <p className="scan-panel__desc">
-          Camera frames are scored for visible identifiers — melanin, eye color,
-          facial structure, and tribe — then mapped onto the type catalog.
-          Cluster similarity, not a medical or genetic test.
+          Camera frames score bone spacing, cartilage, hair, and shade —
+          then map onto a heritage type. Cluster fit, not a medical or
+          genetic test.
         </p>
         {cameraReady && phase !== 'error' && (
           <p className="scan-panel__camera-note">Live camera feed on this device.</p>
