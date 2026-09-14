@@ -22,10 +22,10 @@ These scores move with lighting, pose, makeup, and camera white-balance. They ar
 | Shade | Skin and iris patches | Melanin = inverse CIE L*; eye color = lightness + blue/green hue. |
 | **Tribe** | Bone + cartilage + hair + shade + spacing | Heritage-cluster coordinate used in type assignment. **Not tribal membership or DNA.** |
 
-The genome-like strip is illustrative: marker IDs and A/G-style calls are **guessed from the face trait vector**, deterministic on rescan, and labeled as phenotype-derived.
+The headline result is a **heritage type** plus cluster fit. The genome-like strip is secondary flavor: marker IDs and A/G-style calls are **guessed from the face trait vector**, deterministic on rescan, and labeled as not measured alleles.
 
 ## Catalog
 
-`shared/phenotype-catalog.mjs` lists heritage types people can identify with. Centroids include tribe. Different real faces should land on different types.
+`shared/phenotype-catalog.mjs` lists heritage lineages people can identify with. Centroids include tribe. Different real faces should land on different types.
 
 Gene file upload is unchanged and still links genealogy metadata onto the scanned phenotype.

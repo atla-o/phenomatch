@@ -192,6 +192,18 @@
   margin-bottom: 6px;
 }
 
+.genome {
+  margin-top: 2px;
+}
+
+.genome__kicker {
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 3px;
+}
+
 .genome-strip {
   display: flex;
   height: 10px;

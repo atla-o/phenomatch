@@ -16,8 +16,9 @@ export function HeritageReadout({ phenotype }: Props) {
       </div>
       <p className="heritage__fit">{fit}% cluster fit · {phenotype.tagline}</p>
       {readout && (
-        <>
-          <div className="genome-strip" aria-label="Illustrative heritage marker strip">
+        <div className="genome" aria-label="Illustrative guessed heritage markers">
+          <p className="genome__kicker">Guessed markers</p>
+          <div className="genome-strip" aria-hidden="true">
             {readout.bands.map((band) => (
               <span
                 key={band.id}
@@ -38,7 +39,7 @@ export function HeritageReadout({ phenotype }: Props) {
             ))}
           </ul>
           <p className="genome-note">{readout.note}</p>
-        </>
+        </div>
       )}
     </div>
   )

@@ -17,6 +17,7 @@ describe('phenotype catalog', () => {
     for (const type of phenotypeTypes) {
       assert.ok(type.code)
       assert.ok(type.tagline)
+      assert.match(type.tagline, /lineage/i)
       assert.ok(type.genealogyLineage)
       assert.equal(typeof type.traits.tribe, 'number')
       assert.equal(type.traits.tribe, tribeScoreFromTraits(type.traits))
@@ -107,6 +108,8 @@ describe('phenotype catalog', () => {
     assert.ok(phenotype.tribalMarkers.some((marker) => marker.id === 'tribe'))
     assert.equal(hasAnalyzedTraits(phenotype.traits), true)
     assert.equal(phenotype.genomeReadout?.headline, 'West African Gulf XI')
+    assert.match(phenotype.genomeReadout?.note || '', /Guessed from this face/)
+    assert.match(phenotype.genomeReadout?.note || '', /Not measured alleles/)
     assert.ok(phenotype.genomeReadout?.markers.some((marker) => marker.id === 'PM-TRIBE-01'))
     const again = assignPhenotypeFromScan({
       melanin: 86,

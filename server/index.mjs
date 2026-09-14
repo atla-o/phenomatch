@@ -147,7 +147,7 @@ const server = http.createServer(async (req, res) => {
         scanned: true,
         assignedTypeId: saved.id,
         source: store.mode,
-        note: 'Optical scan assigned a catalog type from visible identifiers. Not a medical or genetic test.',
+        note: 'Heritage type assigned from visible bone, shade, and tribal identifiers. Cluster fit, not a medical or genetic test.',
       })
       return
     }

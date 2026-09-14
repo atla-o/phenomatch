@@ -1,7 +1,8 @@
 /**
  * Visible-identifier scoring from face landmarks + image samples.
  *
- * Honest mapping (not a medical, genetic, or ancestry test):
+ * Honest mapping (heritage cluster from a face — not a medical or
+ * laboratory genetic test):
  * - Melanin: inverse lightness of forehead/cheek patches (CIE L*). Lighting,
  *   makeup, and white-balance shift this. It is a color cluster, not a
  *   melanin assay.
@@ -502,7 +503,7 @@ export function buildGenomeReadout(traits = {}, extra = {}, type = null, confide
     headline: type?.name || 'Heritage type',
     code: type?.code || '',
     clusterFit: clampScore(confidence),
-    note: 'Illustrative heritage markers from bone, shade, and tribal identifiers. Not a laboratory genome.',
+    note: 'Guessed from this face — bone, shade, and tribal identifiers. Not measured alleles or a laboratory genome.',
     markers,
     bands: markers.map((marker) => ({ id: marker.id, group: marker.group, value: marker.value })),
   }
