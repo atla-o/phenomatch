@@ -1,26 +1,27 @@
 .app {
-  height: 100svh;
-  height: 100dvh;
-  max-height: 100svh;
-  max-height: 100dvh;
+  position: absolute;
+  inset: 0;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  padding: 12px 16px;
-  padding-top: max(12px, env(safe-area-inset-top, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
   overflow: hidden;
   background: var(--white);
 }
 
+.app__fit {
+  width: calc(var(--phone-design-w) * var(--phone-scale));
+  height: calc(var(--phone-design-h) * var(--phone-scale));
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
 .app__phone {
-  width: 100%;
-  max-width: 390px;
-  height: 100%;
+  width: var(--phone-design-w);
+  height: var(--phone-design-h);
   min-height: 0;
-  max-height: 100%;
+  max-width: none;
+  transform: scale(var(--phone-scale));
+  transform-origin: top left;
   background: var(--white);
   border-radius: 0;
   border: 2px solid var(--black);
@@ -33,7 +34,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 10px 24px 8px;
+  padding: 8px 20px;
+  padding-top: max(8px, env(safe-area-inset-top, 0px));
   font-size: 0.75rem;
   color: var(--black);
   border-bottom: 1px solid var(--black);
@@ -68,18 +70,31 @@
 
 .app__main {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
   min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.app__main > section {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Pheno ── */
 
 .pheno {
-  padding: 20px 24px 24px;
+  padding: 12px 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .pheno__actions {
@@ -121,16 +136,22 @@
 
 .pheno__card {
   border: 1px solid var(--black);
-  padding: 16px;
+  padding: 10px 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .pheno__section-title {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
   border-bottom: 1px solid var(--black);
-  padding-bottom: 8px;
+  padding-bottom: 6px;
+  flex-shrink: 0;
 }
 
 .pheno__intro {
@@ -151,7 +172,10 @@
 .scan-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .scan-panel__intro {
@@ -193,8 +217,8 @@
 
 .scan-panel__frame {
   position: relative;
-  width: 220px;
-  height: 280px;
+  width: 168px;
+  height: 200px;
   border: 2px solid var(--black);
   background: var(--white);
   overflow: hidden;
@@ -348,34 +372,47 @@
 .trait-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  justify-content: space-between;
 }
 
 .trait-list--compact {
-  gap: 10px;
-  margin-top: 12px;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.trait-item {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .trait-item__header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .trait-item__label {
-  font-size: 0.82rem;
+  font-size: 0.72rem;
 }
 
 .trait-item__value {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: 0.72rem;
 }
 
 .trait-item__bar {
-  height: 8px;
+  height: 5px;
   border: 1px solid var(--black);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .trait-item__fill {
@@ -405,26 +442,29 @@
 }
 
 .trait-item__category {
-  display: block;
-  font-size: 0.68rem;
-  margin-top: 4px;
-  text-transform: capitalize;
+  display: none;
 }
 
 .trait-item__detail {
   display: block;
-  font-size: 0.72rem;
-  margin-top: 4px;
-  line-height: 1.4;
+  font-size: 0.62rem;
+  margin-top: 1px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Match ── */
 
 .match {
-  padding: 20px 24px 24px;
+  padding: 10px 16px 10px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .match:has(.umingle-chat),
@@ -440,7 +480,7 @@
   padding: 0;
   flex: 1;
   min-height: 0;
-  margin: 0 -24px;
+  margin: 0 -16px;
 }
 
 .match__source {
@@ -485,7 +525,10 @@
 .anon {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .anon--chat {
@@ -673,7 +716,11 @@
   color: var(--white);
 }
 
-.match__list {
+.match__list,
+.match__saved {
+  flex: 0 0 auto;
+  max-height: 56px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--black);
@@ -724,8 +771,13 @@
 
 .match-card {
   border: 2px solid var(--black);
-  padding: 20px;
+  padding: 12px;
   animation: card-in 0.35s ease-out;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .match-card--exit-left {
@@ -911,21 +963,14 @@
 
 /* ── Umingle ── */
 
-.app__main > section {
-  min-height: 100%;
-}
-
-.app__main > section.match:has(.anon--chat),
-.app__main > section.match:has(.umingle-chat) {
-  min-height: 0;
-  height: 100%;
-}
-
 .umingle {
-  padding: 20px 24px 24px;
+  padding: 10px 16px 10px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .umingle__intro {
@@ -1166,19 +1211,20 @@
 }
 
 .umingle-chat__log {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px;
+  flex: 0 1 auto;
+  overflow: hidden;
+  padding: 10px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  min-height: 280px;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 0;
 }
 
 .umingle-chat__log--compact {
-  flex: 0 1 100px;
-  min-height: 56px;
-  max-height: 120px;
+  flex: 0 0 72px;
+  min-height: 48px;
+  max-height: 72px;
 }
 
 .umingle-chat__empty {
@@ -1357,12 +1403,16 @@
 .anon__preview {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
 }
 
 .anon__preview-frame {
   position: relative;
-  height: clamp(110px, 28svh, 180px);
+  flex: 1;
+  min-height: 0;
+  height: auto;
   border: 2px solid var(--black);
   overflow: hidden;
 }
@@ -1411,21 +1461,8 @@
 }
 
 @media (max-width: 480px) {
-  .app {
-    padding: 0;
-  }
-
   .app__phone {
-    max-width: 100%;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    max-height: 100%;
     border: none;
-  }
-
-  .app__status-bar {
-    padding-top: max(10px, env(safe-area-inset-top, 0px));
   }
 
   .pheno,
