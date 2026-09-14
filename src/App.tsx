@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AppView, MatchCategory, Phenotype } from './types'
 import { userPhenotype as seedPhenotype } from './data/mock'
-import { fetchPhenotype } from './api/client'
+import { fetchIceServers, fetchPhenotype } from './api/client'
 import { loadProfile, saveProfile } from './storage'
 import { PhenoView } from './components/PhenoView'
 import { MatchView } from './components/MatchView'
@@ -31,6 +31,10 @@ function App() {
   useEffect(() => {
     saveProfile({ hasProfile, phenotype })
   }, [hasProfile, phenotype])
+
+  useEffect(() => {
+    void fetchIceServers()
+  }, [])
 
   useEffect(() => {
     void fetchPhenotype().then((result) => {

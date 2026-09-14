@@ -1,9 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { UmingleRoom, UmingleSignal } from '../api/client'
-import { postAnonSignal } from '../api/client'
+import {
+  cachedIceServers,
+  fetchAnonSignals,
+  fetchIceServers,
+  postAnonSignal,
+  restartAnonCall,
+} from '../api/client'
 import { isOfferer } from './antiporn'
-
-const ICE_SERVERS: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }]
+import {
+  CONNECT_FAIL_COPY,
+  ICE_FAIL_MS,
+  ICE_RENEGOTIATE_MS,
+  SIGNAL_POLL_MS,
+} from '../../shared/anon-live.mjs'
 
 function asInit(payload: Record<string, unknown>): RTCSessionDescriptionInit {
   return {
@@ -12,29 +22,76 @@ function asInit(payload: Record<string, unknown>): RTCSessionDescriptionInit {
   }
 }
 
+function mergeSignals(left: UmingleSignal[], right: UmingleSignal[]) {
+  const byId = new Map<string, UmingleSignal>()
+  for (const item of [...left, ...right]) {
+    if (item?.id) byId.set(item.id, item)
+  }
+  return [...byId.values()].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+}
+
 type CallSession = {
   pc: RTCPeerConnection
   remote: MediaStream
   remoteReady: boolean
   iceQueue: RTCIceCandidateInit[]
   seen: Set<string>
+  renegotiated: boolean
 }
 
 export function useAnonCall(
   room: UmingleRoom | null,
   guestId: string,
   localStream: MediaStream | null,
+  onRoom?: (room: UmingleRoom) => void,
 ) {
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null)
   const [connection, setConnection] = useState<'idle' | 'connecting' | 'connected' | 'failed'>('idle')
   const [signalError, setSignalError] = useState<string | null>(null)
+  const [polledSignals, setPolledSignals] = useState<UmingleSignal[]>([])
+  const [polledCallId, setPolledCallId] = useState<string>('')
   const sessionRef = useRef<CallSession | null>(null)
   const roomId = room?.id || ''
-  const callId = room?.callId || ''
+  const callId = polledCallId || room?.callId || ''
   const peerId = room?.peer?.guestId || ''
   const ended = Boolean(room?.peerLeft || room?.endedAt)
-  const signals = room?.signals || []
+  const roomSignals = room?.callId && room.callId === callId ? room.signals || [] : []
+  const signals = mergeSignals(roomSignals, polledSignals)
   const signalKey = signals.map((item) => item.id).join('|')
+
+  useEffect(() => {
+    void fetchIceServers()
+  }, [])
+
+  useEffect(() => {
+    if (!room?.callId) return
+    setPolledCallId((current) => current || room.callId || '')
+  }, [room?.callId])
+
+  useEffect(() => {
+    if (!roomId || !guestId || ended) return
+    let cancelled = false
+
+    const pull = async () => {
+      try {
+        const snap = await fetchAnonSignals(roomId, guestId)
+        if (cancelled) return
+        setPolledSignals(snap.signals || [])
+        if (snap.callId) setPolledCallId(snap.callId)
+      } catch {
+        /* next poll */
+      }
+    }
+
+    void pull()
+    const timer = window.setInterval(() => {
+      void pull()
+    }, SIGNAL_POLL_MS)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [ended, guestId, roomId])
 
   useEffect(() => {
     if (!roomId || !peerId || ended || !localStream) {
@@ -45,7 +102,7 @@ export function useAnonCall(
     }
 
     let cancelled = false
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
+    const pc = new RTCPeerConnection({ iceServers: cachedIceServers() })
     const remote = new MediaStream()
     const session: CallSession = {
       pc,
@@ -53,11 +110,27 @@ export function useAnonCall(
       remoteReady: false,
       iceQueue: [],
       seen: new Set(),
+      renegotiated: false,
     }
     sessionRef.current = session
     setRemoteStream(null)
     setSignalError(null)
     setConnection('connecting')
+
+    const syncState = () => {
+      if (cancelled) return
+      const ice = pc.iceConnectionState
+      const conn = pc.connectionState
+      if (conn === 'connected' || ice === 'connected' || ice === 'completed') {
+        setConnection('connected')
+        setSignalError(null)
+        return
+      }
+      if (conn === 'failed' || ice === 'failed') {
+        setConnection('failed')
+        setSignalError(CONNECT_FAIL_COPY)
+      }
+    }
 
     pc.ontrack = (event) => {
       const tracks = event.streams[0]?.getTracks() ?? [event.track]
@@ -68,12 +141,8 @@ export function useAnonCall(
       }
       setRemoteStream(remote)
     }
-    pc.onconnectionstatechange = () => {
-      if (cancelled) return
-      if (pc.connectionState === 'connected') setConnection('connected')
-      if (pc.connectionState === 'failed') setConnection('failed')
-      if (pc.connectionState === 'disconnected') setConnection('connecting')
-    }
+    pc.onconnectionstatechange = syncState
+    pc.oniceconnectionstatechange = syncState
     pc.onicecandidate = (event) => {
       if (!event.candidate || cancelled) return
       void postAnonSignal(roomId, guestId, 'ice', event.candidate.toJSON() as Record<string, unknown>).catch(
@@ -87,12 +156,29 @@ export function useAnonCall(
       pc.addTrack(track, localStream)
     }
 
+    const postOffer = async (iceRestart = false) => {
+      if (iceRestart) {
+        const offer = await pc.createOffer({ iceRestart: true })
+        await pc.setLocalDescription(offer)
+        await postAnonSignal(roomId, guestId, 'offer', { type: offer.type, sdp: offer.sdp })
+        return
+      }
+      if (pc.signalingState === 'have-local-offer' && pc.localDescription) {
+        await postAnonSignal(roomId, guestId, 'offer', {
+          type: pc.localDescription.type,
+          sdp: pc.localDescription.sdp,
+        })
+        return
+      }
+      const offer = await pc.createOffer()
+      await pc.setLocalDescription(offer)
+      await postAnonSignal(roomId, guestId, 'offer', { type: offer.type, sdp: offer.sdp })
+    }
+
     const start = async () => {
       try {
         if (isOfferer(guestId, peerId)) {
-          const offer = await pc.createOffer()
-          await pc.setLocalDescription(offer)
-          await postAnonSignal(roomId, guestId, 'offer', { type: offer.type, sdp: offer.sdp })
+          await postOffer(false)
         }
       } catch {
         if (!cancelled) {
@@ -104,8 +190,26 @@ export function useAnonCall(
 
     void start()
 
+    const renegotiateTimer = window.setTimeout(() => {
+      if (cancelled || pc.connectionState === 'connected') return
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') return
+      if (!isOfferer(guestId, peerId) || session.renegotiated) return
+      session.renegotiated = true
+      void postOffer(true).catch(() => undefined)
+    }, ICE_RENEGOTIATE_MS)
+
+    const failTimer = window.setTimeout(() => {
+      if (cancelled) return
+      if (pc.connectionState === 'connected') return
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') return
+      setConnection('failed')
+      setSignalError(CONNECT_FAIL_COPY)
+    }, ICE_FAIL_MS)
+
     return () => {
       cancelled = true
+      window.clearTimeout(renegotiateTimer)
+      window.clearTimeout(failTimer)
       if (sessionRef.current?.pc === pc) sessionRef.current = null
       pc.close()
     }
@@ -134,7 +238,7 @@ export function useAnonCall(
       session.seen.add(signal.id)
       try {
         if (signal.type === 'offer') {
-          if (session.pc.currentRemoteDescription) return
+          if (session.pc.signalingState === 'have-local-offer') return
           await session.pc.setRemoteDescription(asInit(signal.payload))
           await flushIce()
           const answer = await session.pc.createAnswer()
@@ -144,10 +248,9 @@ export function useAnonCall(
             sdp: answer.sdp,
           })
         } else if (signal.type === 'answer') {
-          if (!session.pc.currentRemoteDescription) {
-            await session.pc.setRemoteDescription(asInit(signal.payload))
-            await flushIce()
-          }
+          if (session.pc.signalingState !== 'have-local-offer') return
+          await session.pc.setRemoteDescription(asInit(signal.payload))
+          await flushIce()
         } else if (signal.type === 'ice') {
           const candidate = signal.payload as RTCIceCandidateInit
           if (!session.remoteReady) {
@@ -172,7 +275,25 @@ export function useAnonCall(
       cancelled = true
     }
     // signalKey tracks new payloads; `signals` is read from this render.
-  }, [ended, guestId, roomId, signalKey])
+    // callId remounts the PC so replay must run again on the new session.
+  }, [callId, ended, guestId, roomId, signalKey])
 
-  return { remoteStream, connection, signalError }
+  const retry = useCallback(async () => {
+    if (!roomId || !guestId) return null
+    setSignalError(null)
+    setConnection('connecting')
+    try {
+      const next = await restartAnonCall(roomId, guestId)
+      setPolledSignals([])
+      setPolledCallId(next.callId || `retry-${Date.now()}`)
+      onRoom?.(next)
+      return next
+    } catch {
+      setConnection('failed')
+      setSignalError(CONNECT_FAIL_COPY)
+      return null
+    }
+  }, [guestId, onRoom, roomId])
+
+  return { remoteStream, connection, signalError, retry }
 }

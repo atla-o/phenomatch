@@ -153,6 +153,22 @@ export async function createFirestoreDatastore(catalog) {
       }))
       return room
     },
+    async updateRoom(roomId, mutate) {
+      if (!roomId) return null
+      const ref = db.collection(cols.umingleRooms).doc(roomId)
+      return db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref)
+        if (!snap.exists) return null
+        const next = await mutate(snap.data())
+        if (!next) return null
+        const stored = jsonSafe({
+          ...next,
+          updatedAt: Date.now(),
+        })
+        tx.set(ref, stored)
+        return stored
+      })
+    },
   }
 }
 

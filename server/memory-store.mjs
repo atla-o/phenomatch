@@ -5,11 +5,22 @@
 import { gcpBaseStatus } from './gcp.mjs'
 import { candidateFromPhenotype } from './umingle-models.mjs'
 
+function createLocker() {
+  const locks = new Map()
+  return function withLock(key, fn) {
+    const prev = locks.get(key) || Promise.resolve()
+    const next = prev.catch(() => undefined).then(fn)
+    locks.set(key, next)
+    return next
+  }
+}
+
 export function memoryDatastore(catalog) {
   const phenotypes = new Map()
   const candidates = new Map()
   const guests = new Map()
   const rooms = new Map()
+  const withRoomLock = createLocker()
 
   for (const match of catalog.matches) {
     const record = {
@@ -90,8 +101,21 @@ export function memoryDatastore(catalog) {
       return rooms.get(roomId) || null
     },
     async saveRoom(room) {
-      rooms.set(room.id, room)
-      return room
+      return withRoomLock(room.id, async () => {
+        rooms.set(room.id, room)
+        return room
+      })
+    },
+    async updateRoom(roomId, mutate) {
+      if (!roomId) return null
+      return withRoomLock(roomId, async () => {
+        const room = rooms.get(roomId) || null
+        if (!room) return null
+        const next = await mutate(room)
+        if (!next) return null
+        rooms.set(roomId, next)
+        return next
+      })
     },
   }
 }
@@ -124,5 +148,6 @@ export function unavailableDatastore(error) {
     listGuests: fail,
     getRoom: fail,
     saveRoom: fail,
+    updateRoom: fail,
   }
 }

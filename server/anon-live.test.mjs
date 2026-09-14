@@ -42,4 +42,24 @@ describe('anon live helpers', () => {
     assert.equal(isValidSignalType('candidate'), false)
     assert.deepEqual(pruneSignals(null), [])
   })
+
+  it('keeps the latest offer and answer when ICE floods the buffer', () => {
+    const signals = [
+      { id: 'offer-1', type: 'offer', fromGuestId: 'a' },
+      ...Array.from({ length: 40 }, (_, i) => ({
+        id: `ice-${i}`,
+        type: 'ice',
+        fromGuestId: i % 2 === 0 ? 'a' : 'b',
+      })),
+      { id: 'answer-1', type: 'answer', fromGuestId: 'b' },
+      { id: 'offer-2', type: 'offer', fromGuestId: 'a' },
+      { id: 'ice-late', type: 'ice', fromGuestId: 'b' },
+    ]
+    const kept = pruneSignals(signals, 6)
+    assert.equal(kept.some((item) => item.id === 'offer-2'), true)
+    assert.equal(kept.some((item) => item.id === 'answer-1'), true)
+    assert.equal(kept.some((item) => item.id === 'offer-1'), false)
+    assert.equal(kept.at(-1).id, 'ice-late')
+    assert.ok(kept.length <= 6)
+  })
 })

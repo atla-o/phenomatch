@@ -2,6 +2,10 @@ export const PRESENCE_TTL_MS: number
 export const ANON_MIN_COMPAT: number
 export const DEFAULT_FILTER_SEVERITY: number
 export const SIGNAL_TYPES: string[]
+export const SIGNAL_POLL_MS: number
+export const ICE_RENEGOTIATE_MS: number
+export const ICE_FAIL_MS: number
+export const CONNECT_FAIL_COPY: string
 
 export function isLiveGuest(guest: unknown, now?: number, ttlMs?: number): boolean
 export function isOfferer(localId: string, remoteId: string): boolean

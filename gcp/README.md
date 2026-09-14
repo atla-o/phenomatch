@@ -53,6 +53,8 @@ gcloud firestore indexes composite create --project=devo-holding --file=gcp/fire
 
 Local override: `PHENOMATCH_STORE=memory` (ignored when `K_SERVICE` is set). `PHENOMATCH_STORE=firestore` forces Firestore off Cloud Run when ADC is available.
 
+Anon WebRTC ICE defaults are public STUN + Open Relay / Metered TURN (`GET /api/ice`). Optional Cloud Run env: `PHENOMATCH_ICE_SERVERS` (JSON) or `PHENOMATCH_TURN_URLS` + `PHENOMATCH_TURN_USERNAME` + `PHENOMATCH_TURN_CREDENTIAL`. Room signaling appends use a Firestore transaction so concurrent ICE/SDP posts cannot overwrite each other.
+
 ## Deploy path
 
 Push or merge to `main` deploys `phenomatch-web` via GitHub Actions. There is no separate beta host. A future Cloud Build GitHub trigger can use repo-root [`cloudbuild.yaml`](../cloudbuild.yaml) (same service, region, project). GitHub Actions is the primary path.

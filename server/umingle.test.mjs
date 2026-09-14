@@ -95,6 +95,48 @@ describe('umingle', () => {
     assert.equal((await umingle.listMatches(a)).length, 0)
   })
 
+  it('keeps every concurrent signal instead of last-write-wins', async () => {
+    const umingle = fresh()
+    const a = await umingle.join({ phenotype: userPhenotype })
+    const b = await umingle.join({ phenotype: userPhenotype })
+    await umingle.connectSimilar(a)
+    const room = await umingle.connectSimilar(b)
+    const posts = [
+      umingle.postSignal(room.id, a.id, 'offer', { type: 'offer', sdp: 'offer-a' }),
+      umingle.postSignal(room.id, b.id, 'answer', { type: 'answer', sdp: 'answer-b' }),
+      umingle.postSignal(room.id, a.id, 'ice', { candidate: 'a1' }),
+      umingle.postSignal(room.id, b.id, 'ice', { candidate: 'b1' }),
+      umingle.postSignal(room.id, a.id, 'ice', { candidate: 'a2' }),
+      umingle.postSignal(room.id, b.id, 'ice', { candidate: 'b2' }),
+    ]
+    await Promise.all(posts)
+    const seen = await umingle.getChat(room.id, a.id)
+    assert.equal(seen.signals.length, 6)
+    assert.deepEqual(
+      seen.signals.map((item) => item.type).sort(),
+      ['answer', 'ice', 'ice', 'ice', 'ice', 'offer'],
+    )
+    const light = await umingle.getSignals(room.id, b.id)
+    assert.equal(light.signals.length, 6)
+    assert.equal(light.callId, room.callId)
+  })
+
+  it('restart clears signals and bumps callId', async () => {
+    const umingle = fresh()
+    const a = await umingle.join({ phenotype: userPhenotype })
+    const b = await umingle.join({ phenotype: userPhenotype })
+    await umingle.connectSimilar(a)
+    const room = await umingle.connectSimilar(b)
+    await umingle.postSignal(room.id, a.id, 'offer', { type: 'offer', sdp: 'v=0' })
+    const restarted = await umingle.restartCall(room.id, b.id)
+    assert.ok(restarted.callId)
+    assert.notEqual(restarted.callId, room.callId)
+    assert.equal(restarted.signals.length, 0)
+    const seen = await umingle.getSignals(room.id, a.id)
+    assert.equal(seen.callId, restarted.callId)
+    assert.equal(seen.signals.length, 0)
+  })
+
   it('skip ends the room so the peer sees they left', async () => {
     const umingle = fresh()
     const a = await umingle.join({ phenotype: userPhenotype })
