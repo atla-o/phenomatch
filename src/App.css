@@ -898,15 +898,15 @@
 }
 
 .match-card__traits .trait-list {
-  gap: 2px;
+  gap: 4px;
   margin-top: 0;
   justify-content: flex-start;
 }
 
 .match-card__traits .trait-item {
   flex: 0 0 auto;
-  min-height: 0;
-  gap: 1px;
+  min-height: 16px;
+  gap: 2px;
 }
 
 .match-card__traits .trait-item__header {
@@ -917,6 +917,9 @@
 .match-card__traits .trait-item__value {
   font-size: 0.62rem;
   line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .match-card__traits .trait-item__bar {
@@ -952,7 +955,7 @@
 .compat-ring__value {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 0.85rem;
 }
 
 .compat-ring__unit {
