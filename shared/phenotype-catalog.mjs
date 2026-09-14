@@ -121,7 +121,7 @@ export const phenotypeTypes = [
     id: 'baltic-9',
     name: 'Baltic Fringe IX',
     code: 'GN-BF9',
-    tagline: 'Baltic fringe lineage — light features, high cheekbones'
+    tagline: 'Baltic fringe lineage — light features, high cheekbones',
     genealogyLineage: 'Baltic fringe, generation depth 7',
     traits: { melanin: 22, eyeColor: 92, hairPattern: 24, noseShape: 28, lipFullness: 32, facialStructure: 48, jawLine: 70, cheekboneStructure: 86 },
   }),
@@ -129,7 +129,7 @@ export const phenotypeTypes = [
     id: 'nordic-atlantic-7',
     name: 'Nordic-Atlantic VII',
     code: 'GN-NA7',
-    tagline: 'North Sea lineage you can identify with'
+    tagline: 'North Sea lineage you can identify with',
     genealogyLineage: 'Nordic-Atlantic, generation depth 4',
     traits: { melanin: 28, eyeColor: 78, hairPattern: 34, noseShape: 32, lipFullness: 38, facialStructure: 52, jawLine: 64, cheekboneStructure: 72 },
   }),
@@ -145,7 +145,7 @@ export const phenotypeTypes = [
     id: 'central-euro-5',
     name: 'Central European V',
     code: 'GN-CE5',
-    tagline: 'Mixed Central European lineage'
+    tagline: 'Mixed Central European lineage',
     genealogyLineage: 'Central European mixed, generation depth 3',
     traits: { melanin: 38, eyeColor: 55, hairPattern: 55, noseShape: 42, lipFullness: 45, facialStructure: 58, jawLine: 58, cheekboneStructure: 55 },
   }),
@@ -153,7 +153,7 @@ export const phenotypeTypes = [
     id: 'alpine-4',
     name: 'Alpine Highland IV',
     code: 'GN-AH4',
-    tagline: 'Alpine highland lineage — broader midface'
+    tagline: 'Alpine highland lineage — broader midface',
     genealogyLineage: 'Alpine highland, generation depth 4',
     traits: { melanin: 42, eyeColor: 48, hairPattern: 62, noseShape: 48, lipFullness: 48, facialStructure: 68, jawLine: 72, cheekboneStructure: 64 },
   }),
@@ -161,7 +161,7 @@ export const phenotypeTypes = [
     id: 'mediterranean-3',
     name: 'Mediterranean Basin III',
     code: 'GN-MB3',
-    tagline: 'Mediterranean coastal lineage'
+    tagline: 'Mediterranean coastal lineage',
     genealogyLineage: 'Mediterranean basin, generation depth 6',
     traits: { melanin: 48, eyeColor: 42, hairPattern: 72, noseShape: 58, lipFullness: 58, facialStructure: 62, jawLine: 60, cheekboneStructure: 58 },
   }),
@@ -169,7 +169,7 @@ export const phenotypeTypes = [
     id: 'iberian-6',
     name: 'Iberian Atlantic VI',
     code: 'GN-IA6',
-    tagline: 'Iberian Atlantic lineage'
+    tagline: 'Iberian Atlantic lineage',
     genealogyLineage: 'Iberian Atlantic, generation depth 5',
     traits: { melanin: 50, eyeColor: 38, hairPattern: 70, noseShape: 52, lipFullness: 55, facialStructure: 60, jawLine: 58, cheekboneStructure: 54 },
   }),
@@ -177,7 +177,7 @@ export const phenotypeTypes = [
     id: 'pontic-20',
     name: 'Pontic Steppe XX',
     code: 'GN-PS20',
-    tagline: 'Pontic steppe lineage — wide cheekbones'
+    tagline: 'Pontic steppe lineage — wide cheekbones',
     genealogyLineage: 'Pontic steppe, generation depth 6',
     traits: { melanin: 44, eyeColor: 50, hairPattern: 58, noseShape: 50, lipFullness: 44, facialStructure: 64, jawLine: 66, cheekboneStructure: 78 },
   }),
@@ -185,7 +185,7 @@ export const phenotypeTypes = [
     id: 'levantine-8',
     name: 'Levantine Corridor VIII',
     code: 'GN-LC8',
-    tagline: 'Levantine corridor lineage'
+    tagline: 'Levantine corridor lineage',
     genealogyLineage: 'Levantine corridor, generation depth 6',
     traits: { melanin: 54, eyeColor: 32, hairPattern: 78, noseShape: 68, lipFullness: 56, facialStructure: 58, jawLine: 62, cheekboneStructure: 60 },
   }),
@@ -193,7 +193,7 @@ export const phenotypeTypes = [
     id: 'persian-19',
     name: 'Persian Plateau XIX',
     code: 'GN-PP19',
-    tagline: 'Persian plateau lineage'
+    tagline: 'Persian plateau lineage',
     genealogyLineage: 'Persian plateau, generation depth 5',
     traits: { melanin: 52, eyeColor: 36, hairPattern: 74, noseShape: 62, lipFullness: 52, facialStructure: 56, jawLine: 64, cheekboneStructure: 66 },
   }),
@@ -201,7 +201,7 @@ export const phenotypeTypes = [
     id: 'maghreb-2',
     name: 'Maghreb Coastal II',
     code: 'GN-MC2',
-    tagline: 'Maghreb coastal lineage'
+    tagline: 'Maghreb coastal lineage',
     genealogyLineage: 'Maghreb coastal, generation depth 5',
     traits: { melanin: 56, eyeColor: 34, hairPattern: 76, noseShape: 64, lipFullness: 60, facialStructure: 60, jawLine: 61, cheekboneStructure: 57 },
   }),
@@ -209,7 +209,7 @@ export const phenotypeTypes = [
     id: 'nile-1',
     name: 'Nile-Saharan I',
     code: 'GN-NS1',
-    tagline: 'Nile-Saharan lineage'
+    tagline: 'Nile-Saharan lineage',
     genealogyLineage: 'Nile-Saharan, generation depth 6',
     traits: { melanin: 72, eyeColor: 22, hairPattern: 82, noseShape: 58, lipFullness: 62, facialStructure: 55, jawLine: 60, cheekboneStructure: 58 },
   }),
@@ -217,7 +217,7 @@ export const phenotypeTypes = [
     id: 'horn-10',
     name: 'Horn Plateau X',
     code: 'GN-HP10',
-    tagline: 'Horn plateau lineage'
+    tagline: 'Horn plateau lineage',
     genealogyLineage: 'Horn plateau, generation depth 7',
     traits: { melanin: 76, eyeColor: 20, hairPattern: 84, noseShape: 44, lipFullness: 58, facialStructure: 52, jawLine: 58, cheekboneStructure: 62 },
   }),
@@ -225,7 +225,7 @@ export const phenotypeTypes = [
     id: 'sahel-13',
     name: 'Sahel Savannah XIII',
     code: 'GN-SS13',
-    tagline: 'Sahel savannah lineage'
+    tagline: 'Sahel savannah lineage',
     genealogyLineage: 'Sahel savannah, generation depth 5',
     traits: { melanin: 80, eyeColor: 18, hairPattern: 86, noseShape: 70, lipFullness: 72, facialStructure: 60, jawLine: 62, cheekboneStructure: 55 },
   }),
@@ -233,7 +233,7 @@ export const phenotypeTypes = [
     id: 'west-african-11',
     name: 'West African Gulf XI',
     code: 'GN-WG11',
-    tagline: 'West African gulf lineage'
+    tagline: 'West African gulf lineage',
     genealogyLineage: 'West African gulf, generation depth 5',
     traits: { melanin: 86, eyeColor: 16, hairPattern: 88, noseShape: 78, lipFullness: 82, facialStructure: 64, jawLine: 58, cheekboneStructure: 52 },
   }),
@@ -241,7 +241,7 @@ export const phenotypeTypes = [
     id: 'andean-14',
     name: 'Andean Highland XIV',
     code: 'GN-AH14',
-    tagline: 'Andean highland lineage — high cheekbones'
+    tagline: 'Andean highland lineage — high cheekbones',
     genealogyLineage: 'Andean highland, generation depth 6',
     traits: { melanin: 58, eyeColor: 28, hairPattern: 80, noseShape: 54, lipFullness: 50, facialStructure: 70, jawLine: 56, cheekboneStructure: 88 },
   }),
@@ -249,7 +249,7 @@ export const phenotypeTypes = [
     id: 'amazon-15',
     name: 'Amazon Basin XV',
     code: 'GN-AB15',
-    tagline: 'Amazon basin lineage'
+    tagline: 'Amazon basin lineage',
     genealogyLineage: 'Amazon basin, generation depth 5',
     traits: { melanin: 64, eyeColor: 24, hairPattern: 82, noseShape: 60, lipFullness: 58, facialStructure: 66, jawLine: 54, cheekboneStructure: 72 },
   }),
@@ -257,7 +257,7 @@ export const phenotypeTypes = [
     id: 'east-asian-16',
     name: 'East Asian Continental XVI',
     code: 'GN-EA16',
-    tagline: 'East Asian continental lineage'
+    tagline: 'East Asian continental lineage',
     genealogyLineage: 'East Asian continental, generation depth 6',
     traits: { melanin: 46, eyeColor: 30, hairPattern: 85, noseShape: 40, lipFullness: 42, facialStructure: 78, jawLine: 52, cheekboneStructure: 74 },
   }),
@@ -265,7 +265,7 @@ export const phenotypeTypes = [
     id: 'island-pacific-17',
     name: 'Island Pacific XVII',
     code: 'GN-IP17',
-    tagline: 'Island Pacific lineage'
+    tagline: 'Island Pacific lineage',
     genealogyLineage: 'Island Pacific, generation depth 5',
     traits: { melanin: 62, eyeColor: 26, hairPattern: 84, noseShape: 66, lipFullness: 70, facialStructure: 72, jawLine: 60, cheekboneStructure: 68 },
   }),
@@ -273,7 +273,7 @@ export const phenotypeTypes = [
     id: 'south-asian-18',
     name: 'South Asian Monsoon XVIII',
     code: 'GN-SA18',
-    tagline: 'South Asian monsoon lineage'
+    tagline: 'South Asian monsoon lineage',
     genealogyLineage: 'South Asian monsoon, generation depth 5',
     traits: { melanin: 60, eyeColor: 28, hairPattern: 86, noseShape: 56, lipFullness: 54, facialStructure: 58, jawLine: 58, cheekboneStructure: 56 },
   }),
