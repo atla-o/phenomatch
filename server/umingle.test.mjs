@@ -122,12 +122,14 @@ describe('umingle', () => {
   })
 
   it('restart clears signals and bumps callId', async () => {
-    const umingle = fresh()
+    const clock = { now: 2_000_000 }
+    const umingle = fresh(clock)
     const a = await umingle.join({ phenotype: userPhenotype })
     const b = await umingle.join({ phenotype: userPhenotype })
     await umingle.connectSimilar(a)
     const room = await umingle.connectSimilar(b)
     await umingle.postSignal(room.id, a.id, 'offer', { type: 'offer', sdp: 'v=0' })
+    clock.now += 1
     const restarted = await umingle.restartCall(room.id, b.id)
     assert.ok(restarted.callId)
     assert.notEqual(restarted.callId, room.callId)

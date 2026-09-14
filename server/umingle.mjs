@@ -357,7 +357,7 @@ export function createUmingle(store, { now = () => Date.now(), ttlMs = PRESENCE_
       return {
         ...room,
         signals: [],
-        callId: `call-${clock()}`,
+        callId: `call-${clock()}-${crypto.randomUUID()}`,
       }
     })
     return serializeRoom(next, guestId, await peerOf(next, guestId))
