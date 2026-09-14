@@ -311,7 +311,7 @@ function DataMatch({
             <div className="match-card__avatar">
               <span>{match.phenotype.code}</span>
             </div>
-            <CompatibilityRing value={match.compatibility} />
+            <CompatibilityRing value={match.compatibility} size={48} />
           </div>
 
           <div className="match-card__info">
