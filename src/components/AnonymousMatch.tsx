@@ -201,6 +201,10 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
             {joining ? 'Connecting…' : 'Go live'}
           </button>
         )}
+        <p className="anon-chat__disclaimer">
+          Antiporn filter is on by default once you connect. It covers likely
+          NSFW regions. Not a medical or legal classifier.
+        </p>
       </div>
 
       <div className="anon__preview">
@@ -227,10 +231,6 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
             </div>
           )}
         </div>
-        <p className="anon-chat__disclaimer">
-          Antiporn filter is on by default once you connect. It covers likely
-          NSFW regions. Not a medical or legal classifier.
-        </p>
       </div>
 
       {error && (
@@ -250,15 +250,11 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
       )}
 
       {!loading && matches.length > 0 && (
-        <ul className="umingle__list" aria-label="Live similar phenotypes">
-          {matches.map((item) => (
-            <li key={item.guestId ?? item.phenotype.id} className="umingle-card umingle-card--static">
-              <div className="umingle-card__top">
-                <strong>{item.phenotype.name}</strong>
-                <span className="umingle-card__anon">{item.compatibility}%</span>
-              </div>
-              <p>{item.phenotype.tagline}</p>
-              <span className="umingle__status">Live now</span>
+        <ul className="anon__live-list" aria-label="Live similar phenotypes">
+          {matches.slice(0, 2).map((item) => (
+            <li key={item.guestId ?? item.phenotype.id}>
+              <span>{item.phenotype.name}</span>
+              <span>{item.compatibility}% · live</span>
             </li>
           ))}
         </ul>

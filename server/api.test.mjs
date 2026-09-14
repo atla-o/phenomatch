@@ -161,19 +161,80 @@ test('anon live waits alone then pairs two similar guests', async () => {
   const joined = await again.json()
   assert.equal(joined.room.id, paired.room.id)
 
-  const signal = await fetch(`${base}/api/umingle/signal`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      roomId: paired.room.id,
-      guestId: paired.guest.id,
-      type: 'offer',
-      payload: { type: 'offer', sdp: 'v=0' },
+  const ice = await fetch(`${base}/api/ice`)
+  assert.equal(ice.status, 200)
+  const iceBody = await ice.json()
+  assert.equal(iceBody.hasTurn, true)
+  assert.ok(iceBody.iceServers.some((item) => String(item.urls).startsWith('turn:')))
+
+  const [offerRes, answerRes, iceA, iceB] = await Promise.all([
+    fetch(`${base}/api/umingle/signal`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        roomId: paired.room.id,
+        guestId: paired.guest.id,
+        type: 'offer',
+        payload: { type: 'offer', sdp: 'v=0' },
+      }),
     }),
-  })
-  assert.equal(signal.status, 200)
-  const signaled = await signal.json()
-  assert.equal(signaled.room.signals[0].type, 'offer')
+    fetch(`${base}/api/umingle/signal`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        roomId: paired.room.id,
+        guestId: alone.guest.id,
+        type: 'answer',
+        payload: { type: 'answer', sdp: 'v=1' },
+      }),
+    }),
+    fetch(`${base}/api/umingle/signal`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        roomId: paired.room.id,
+        guestId: paired.guest.id,
+        type: 'ice',
+        payload: { candidate: 'a' },
+      }),
+    }),
+    fetch(`${base}/api/umingle/signal`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        roomId: paired.room.id,
+        guestId: alone.guest.id,
+        type: 'ice',
+        payload: { candidate: 'b' },
+      }),
+    }),
+  ])
+  assert.equal(offerRes.status, 200)
+  assert.equal(answerRes.status, 200)
+  assert.equal(iceA.status, 200)
+  assert.equal(iceB.status, 200)
+
+  const light = await fetch(
+    `${base}/api/umingle/chat/${encodeURIComponent(paired.room.id)}/signals?guestId=${encodeURIComponent(alone.guest.id)}`,
+  )
+  assert.equal(light.status, 200)
+  const signaled = await light.json()
+  assert.equal(signaled.signals.length, 4)
+  assert.ok(signaled.signals.some((item) => item.type === 'offer'))
+  assert.ok(signaled.signals.some((item) => item.type === 'answer'))
+
+  const restart = await fetch(
+    `${base}/api/umingle/chat/${encodeURIComponent(paired.room.id)}/restart`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ guestId: paired.guest.id }),
+    },
+  )
+  assert.equal(restart.status, 200)
+  const restarted = await restart.json()
+  assert.equal(restarted.room.signals.length, 0)
+  assert.notEqual(restarted.room.callId, paired.room.callId)
 
   const send = await fetch(`${base}/api/umingle/chat/${encodeURIComponent(paired.room.id)}/messages`, {
     method: 'POST',

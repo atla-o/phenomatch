@@ -286,13 +286,35 @@ export function createUmingle(store, { now = () => Date.now(), ttlMs = PRESENCE_
     return serializeRoom(next, guestId, await peerOf(next, guestId))
   }
 
-  async function postSignal(roomId, guestId, type, payload) {
-    if (!isValidSignalType(type)) {
-      throw new Error('bad_signal')
+  async function getSignals(roomId, guestId) {
+    const room = await store.getRoom(roomId)
+    if (!room) return null
+    if (!room.participantIds.includes(guestId)) {
+      throw new Error('not_a_participant')
     }
-    if (!payload || typeof payload !== 'object') {
-      throw new Error('signal_payload_required')
+    return {
+      id: room.id,
+      callId: room.callId || null,
+      endedAt: room.endedAt || null,
+      peerLeft: Boolean(room.endedAt && room.leftBy && room.leftBy !== guestId),
+      signals: Array.isArray(room.signals) ? room.signals : [],
     }
+  }
+
+  async function mutateRoom(roomId, guestId, mutate) {
+    if (typeof store.updateRoom === 'function') {
+      const next = await store.updateRoom(roomId, (room) => {
+        if (!room.participantIds.includes(guestId)) {
+          throw new Error('not_a_participant')
+        }
+        return mutate(room)
+      })
+      if (!next) {
+        throw new Error('room_not_found')
+      }
+      return next
+    }
+
     const room = await store.getRoom(roomId)
     if (!room) {
       throw new Error('room_not_found')
@@ -300,19 +322,44 @@ export function createUmingle(store, { now = () => Date.now(), ttlMs = PRESENCE_
     if (!room.participantIds.includes(guestId)) {
       throw new Error('not_a_participant')
     }
-
-    const signals = pruneSignals([
-      ...(room.signals || []),
-      {
-        id: `sig-${crypto.randomUUID()}`,
-        fromGuestId: guestId,
-        type,
-        payload,
-        createdAt: clock(),
-      },
-    ])
-    const next = { ...room, signals }
+    const next = await mutate(room)
     await store.saveRoom(next)
+    return next
+  }
+
+  async function postSignal(roomId, guestId, type, payload) {
+    if (!isValidSignalType(type)) {
+      throw new Error('bad_signal')
+    }
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('signal_payload_required')
+    }
+
+    const signal = {
+      id: `sig-${crypto.randomUUID()}`,
+      fromGuestId: guestId,
+      type,
+      payload,
+      createdAt: clock(),
+    }
+    const next = await mutateRoom(roomId, guestId, (room) => ({
+      ...room,
+      signals: pruneSignals([...(room.signals || []), signal]),
+    }))
+    return serializeRoom(next, guestId, await peerOf(next, guestId))
+  }
+
+  async function restartCall(roomId, guestId) {
+    const next = await mutateRoom(roomId, guestId, (room) => {
+      if (room.endedAt) {
+        throw new Error('room_ended')
+      }
+      return {
+        ...room,
+        signals: [],
+        callId: `call-${clock()}-${crypto.randomUUID()}`,
+      }
+    })
     return serializeRoom(next, guestId, await peerOf(next, guestId))
   }
 
@@ -328,8 +375,10 @@ export function createUmingle(store, { now = () => Date.now(), ttlMs = PRESENCE_
     openChat,
     connectSimilar,
     getChat,
+    getSignals,
     postMessage,
     postSignal,
+    restartCall,
     heartbeat,
     leave,
     listLive,

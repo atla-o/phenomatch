@@ -5,6 +5,7 @@ import { queryMatches } from './matching.mjs'
 import { userPhenotype, matches, filterOptions, scanSteps } from './catalog.mjs'
 import { createUmingle } from './umingle.mjs'
 import { hasStaticUi, serveStatic } from './static.mjs'
+import { iceServersFromEnv, hasTurnServer } from '../shared/ice-servers.mjs'
 
 const PORT = Number(process.env.MATCH_API_PORT || process.env.PORT || 8080)
 const HOST = process.env.HOST || '0.0.0.0'
@@ -87,6 +88,20 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && url.pathname === '/api/gcp') {
       send(res, 200, { config: gcpConfig, status: await gcpStatus(store) })
+      return
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/ice') {
+      const iceServers = iceServersFromEnv()
+      send(res, 200, {
+        iceServers,
+        hasTurn: hasTurnServer(iceServers),
+        source: process.env.PHENOMATCH_ICE_SERVERS
+          ? 'env'
+          : process.env.PHENOMATCH_TURN_URLS
+            ? 'turn-env'
+            : 'public-defaults',
+      })
       return
     }
 
@@ -298,12 +313,14 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
-    const chatPath = url.pathname.match(/^\/api\/umingle\/chat\/([^/]+)(?:\/(messages))?$/)
+    const chatPath = url.pathname.match(
+      /^\/api\/umingle\/chat\/([^/]+)(?:\/(messages|signals|restart))?$/,
+    )
     if (chatPath) {
       const roomId = decodeURIComponent(chatPath[1])
-      const messagesOnly = chatPath[2] === 'messages'
+      const tail = chatPath[2] || ''
 
-      if (req.method === 'GET' && !messagesOnly) {
+      if (req.method === 'GET' && tail === '') {
         const guestId = url.searchParams.get('guestId')
         const room = await umingle.getChat(roomId, guestId)
         if (!room) {
@@ -314,9 +331,27 @@ const server = http.createServer(async (req, res) => {
         return
       }
 
-      if (req.method === 'POST' && messagesOnly) {
+      if (req.method === 'GET' && tail === 'signals') {
+        const guestId = url.searchParams.get('guestId')
+        const snap = await umingle.getSignals(roomId, guestId)
+        if (!snap) {
+          send(res, 404, { error: 'room_not_found' })
+          return
+        }
+        send(res, 200, { ...snap, matchType: 'anonymous', source: store.mode })
+        return
+      }
+
+      if (req.method === 'POST' && tail === 'messages') {
         const body = await readJson(req)
         const room = await umingle.postMessage(roomId, body.guestId, body.text)
+        send(res, 200, { room, matchType: 'anonymous', source: store.mode })
+        return
+      }
+
+      if (req.method === 'POST' && tail === 'restart') {
+        const body = await readJson(req)
+        const room = await umingle.restartCall(roomId, body.guestId)
         send(res, 200, { room, matchType: 'anonymous', source: store.mode })
         return
       }

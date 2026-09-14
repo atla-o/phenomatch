@@ -3,6 +3,13 @@
 :root {
   --black: #000000;
   --white: #ffffff;
+  --phone-design-w: 390px;
+  --phone-design-h: 844px;
+  --phone-scale: 1;
+  --vv-w: 100dvw;
+  --vv-h: 100dvh;
+  --vv-x: 0px;
+  --vv-y: 0px;
 
   --font-display: 'Syne', system-ui, sans-serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
@@ -29,14 +36,32 @@
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
-  min-height: 100svh;
-  background: var(--white);
+html,
+body,
+#root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--vv-w, 100dvw);
+  height: var(--vv-h, 100svh);
+  max-width: 100dvw;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
-#root {
-  min-height: 100svh;
+input,
+textarea,
+select {
+  touch-action: manipulation;
+}
+
+body {
+  margin: 0;
+  background: var(--white);
 }
 
 h1, h2, h3, h4 {

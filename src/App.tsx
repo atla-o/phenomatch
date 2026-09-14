@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { AppView, MatchCategory, Phenotype } from './types'
 import { userPhenotype as seedPhenotype } from './data/mock'
-import { fetchPhenotype } from './api/client'
+import { fetchIceServers, fetchPhenotype } from './api/client'
 import { loadProfile, saveProfile } from './storage'
 import { PhenoView } from './components/PhenoView'
 import { MatchView } from './components/MatchView'
 import { NavBar } from './components/NavBar'
+import { usePhoneScale } from './lib/usePhoneScale'
 import './App.css'
 
 function readUmingleRedirect(): { view: AppView; matchCategory: MatchCategory } {
@@ -20,6 +21,7 @@ function readUmingleRedirect(): { view: AppView; matchCategory: MatchCategory } 
 }
 
 function App() {
+  usePhoneScale()
   const [boot] = useState(readUmingleRedirect)
   const [view, setView] = useState<AppView>(boot.view)
   const [matchCategory, setMatchCategory] = useState<MatchCategory>(boot.matchCategory)
@@ -31,6 +33,10 @@ function App() {
   useEffect(() => {
     saveProfile({ hasProfile, phenotype })
   }, [hasProfile, phenotype])
+
+  useEffect(() => {
+    void fetchIceServers()
+  }, [])
 
   useEffect(() => {
     void fetchPhenotype().then((result) => {
@@ -47,39 +53,41 @@ function App() {
 
   return (
     <div className="app">
-      <div className="app__phone">
-        <header className="app__status-bar">
-          <a className="app__logo" href="https://devoutshaman.com" aria-label="devoutshaman.com">o</a>
-        </header>
+      <div className="app__fit">
+        <div className="app__phone">
+          <header className="app__status-bar">
+            <a className="app__logo" href="https://devoutshaman.com" aria-label="devoutshaman.com">o</a>
+          </header>
 
-        <main className="app__main">
-          {view === 'pheno' && (
-            <PhenoView
-              phenotype={phenotype}
-              hasProfile={hasProfile}
-              onScanComplete={(result) => {
-                setPhenotype(result)
-                setHasProfile(true)
-              }}
-              onGeneLinked={setPhenotype}
-              onGoMatch={() => {
-                setMatchCategory('data')
-                setView('match')
-              }}
-            />
-          )}
-          {view === 'match' && (
-            <MatchView
-              hasProfile={hasProfile}
-              phenotype={phenotype}
-              category={matchCategory}
-              onCategoryChange={setMatchCategory}
-              onGoPheno={() => setView('pheno')}
-            />
-          )}
-        </main>
+          <main className="app__main">
+            {view === 'pheno' && (
+              <PhenoView
+                phenotype={phenotype}
+                hasProfile={hasProfile}
+                onScanComplete={(result) => {
+                  setPhenotype(result)
+                  setHasProfile(true)
+                }}
+                onGeneLinked={setPhenotype}
+                onGoMatch={() => {
+                  setMatchCategory('data')
+                  setView('match')
+                }}
+              />
+            )}
+            {view === 'match' && (
+              <MatchView
+                hasProfile={hasProfile}
+                phenotype={phenotype}
+                category={matchCategory}
+                onCategoryChange={setMatchCategory}
+                onGoPheno={() => setView('pheno')}
+              />
+            )}
+          </main>
 
-        <NavBar current={view} onNavigate={setView} />
+          <NavBar current={view} onNavigate={setView} />
+        </div>
       </div>
     </div>
   )

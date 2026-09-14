@@ -311,7 +311,7 @@ function DataMatch({
             <div className="match-card__avatar">
               <span>{match.phenotype.code}</span>
             </div>
-            <CompatibilityRing value={match.compatibility} />
+            <CompatibilityRing value={match.compatibility} size={64} />
           </div>
 
           <div className="match-card__info">
@@ -345,10 +345,9 @@ function DataMatch({
             </div>
           </div>
 
-          <details className="match-card__traits">
-            <summary>Full trait breakdown</summary>
+          <div className="match-card__traits">
             <PhenotypeTraits traits={visualTraits(match.phenotype)} compact />
-          </details>
+          </div>
         </div>
       )}
 

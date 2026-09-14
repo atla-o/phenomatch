@@ -2,6 +2,7 @@ import type { Match, MatchFilters, Phenotype } from '../types'
 import { defaultMatchFilters } from '../types'
 import { userPhenotype as fallbackPhenotype } from '../data/mock'
 import { getOrCreateProfileId, loadProfile } from '../storage'
+import { DEFAULT_ICE_SERVERS } from '../../shared/ice-servers.mjs'
 
 export type GcpStatus = {
   projectId: string
@@ -292,4 +293,55 @@ export async function postAnonSignal(
   if (!res.ok) throw new Error(await readError(res, 'anon signal failed'))
   const body = (await res.json()) as { room: UmingleRoom }
   return body.room
+}
+
+export type AnonSignalSnapshot = {
+  id: string
+  callId: string | null
+  endedAt: number | null
+  peerLeft: boolean
+  signals: UmingleSignal[]
+}
+
+export async function fetchAnonSignals(roomId: string, guestId: string): Promise<AnonSignalSnapshot> {
+  const res = await fetch(
+    `/api/umingle/chat/${encodeURIComponent(roomId)}/signals?guestId=${encodeURIComponent(guestId)}`,
+    { headers: apiHeaders() },
+  )
+  if (!res.ok) throw new Error(await readError(res, 'anon signals failed'))
+  return (await res.json()) as AnonSignalSnapshot
+}
+
+export async function restartAnonCall(roomId: string, guestId: string): Promise<UmingleRoom> {
+  const res = await fetch(`/api/umingle/chat/${encodeURIComponent(roomId)}/restart`, {
+    method: 'POST',
+    headers: apiHeaders(true),
+    body: JSON.stringify({ guestId }),
+  })
+  if (!res.ok) throw new Error(await readError(res, 'anon restart failed'))
+  const body = (await res.json()) as { room: UmingleRoom }
+  return body.room
+}
+
+export type IceServer = RTCIceServer
+
+let iceServersCache: RTCIceServer[] = DEFAULT_ICE_SERVERS
+
+export function cachedIceServers(): RTCIceServer[] {
+  return iceServersCache
+}
+
+export async function fetchIceServers(): Promise<RTCIceServer[]> {
+  try {
+    const res = await fetch('/api/ice')
+    if (res.ok) {
+      const body = (await res.json()) as { iceServers?: RTCIceServer[] }
+      if (Array.isArray(body.iceServers) && body.iceServers.length) {
+        iceServersCache = body.iceServers
+      }
+    }
+  } catch {
+    /* keep public defaults */
+  }
+  return iceServersCache
 }

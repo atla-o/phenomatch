@@ -80,6 +80,10 @@ Optional env (safe defaults for a public demo):
 | `CLOUD_RUN_SERVICE` | `phenomatch-web` | Reported by stubs. |
 | `FIRESTORE_DATABASE` | `(default)` | Native Firestore database id. |
 | `PHENOMATCH_STORE` | `firestore` on Cloud Run | Production store. `memory` is local/dev only and is ignored when `K_SERVICE` is set. |
+| `PHENOMATCH_ICE_SERVERS` | public STUN + Open Relay TURN | JSON `RTCIceServer[]`. Overrides the beta defaults from `GET /api/ice`. |
+| `PHENOMATCH_TURN_URLS` | (unset) | Comma-separated TURN URLs used when `PHENOMATCH_ICE_SERVERS` is unset. |
+| `PHENOMATCH_TURN_USERNAME` | (unset) | TURN username for `PHENOMATCH_TURN_URLS`. |
+| `PHENOMATCH_TURN_CREDENTIAL` | (unset) | TURN credential for `PHENOMATCH_TURN_URLS`. |
 
 No `GOOGLE_APPLICATION_CREDENTIALS` JSON key is required on Cloud Run. The runtime service account needs `roles/datastore.user` and `firestore.googleapis.com` enabled in `devo-holding`. `GET /api/health` reports `mode: firestore` when connected. See [gcp/README.md](gcp/README.md).
 

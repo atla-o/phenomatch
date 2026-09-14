@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { UmingleRoom } from '../api/client'
 import { fetchUmingleChat, sendUmingleMessage } from '../api/client'
@@ -33,8 +33,12 @@ export function UmingleChat({
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [filter, setFilter] = useState(loadAnonFilter)
-  const logRef = useRef<HTMLDivElement>(null)
-  const { remoteStream, connection, signalError } = useAnonCall(room, guestId, localStream)
+  const { remoteStream, connection, signalError, retry } = useAnonCall(
+    room,
+    guestId,
+    localStream,
+    onRoom,
+  )
 
   useEffect(() => {
     saveAnonFilter(filter)
@@ -46,10 +50,6 @@ export function UmingleChat({
     }, 800)
     return () => window.clearInterval(timer)
   }, [guestId, onRoom, room.id])
-
-  useEffect(() => {
-    logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
-  }, [room.messages.length])
 
   const send = async (event: FormEvent) => {
     event.preventDefault()
@@ -74,11 +74,12 @@ export function UmingleChat({
   const similar = room.compatibility ?? peer?.compatibility
   const peerGone = Boolean(room.peerLeft || room.endedAt)
   const live = connection === 'connected' && Boolean(remoteStream) && !peerGone
+  const canRetry = !peerGone && connection === 'failed'
 
   let remoteStatus = 'Connecting…'
   if (peerGone) remoteStatus = 'Peer left'
+  else if (connection === 'failed') remoteStatus = signalError || "Couldn't connect video — retry"
   else if (signalError) remoteStatus = signalError
-  else if (connection === 'failed') remoteStatus = 'Video connection failed'
   else if (live) remoteStatus = 'Live'
   else if (!localStream && cameraError) remoteStatus = 'Waiting for your camera'
   else if (connection === 'connecting') remoteStatus = 'Connecting cameras…'
@@ -140,6 +141,15 @@ export function UmingleChat({
             ) : (
               <div className="umingle-remote__wait">
                 <p>{remoteStatus}</p>
+                {canRetry && (
+                  <button
+                    type="button"
+                    className="btn btn--outline"
+                    onClick={() => void retry().catch(() => undefined)}
+                  >
+                    Retry
+                  </button>
+                )}
               </div>
             )}
             <span className={`umingle-remote__live${live ? '' : ' umingle-remote__live--wait'}`}>
@@ -185,22 +195,31 @@ export function UmingleChat({
         </div>
       </div>
 
-      {(cameraError || signalError || peerGone) && (
+      {(cameraError || signalError || peerGone || connection === 'failed') && (
         <div className="umingle__error" role="status">
           <p>
             {peerGone
               ? 'The other guest left. Skip to find someone else, or leave.'
-              : cameraError || signalError}
+              : cameraError || signalError || "Couldn't connect video — retry"}
           </p>
           {cameraError && onEnableCamera && (
             <button type="button" className="btn btn--outline" onClick={onEnableCamera}>
               Enable camera
             </button>
           )}
+          {canRetry && !cameraError && (
+            <button
+              type="button"
+              className="btn btn--outline"
+              onClick={() => void retry().catch(() => undefined)}
+            >
+              Retry
+            </button>
+          )}
         </div>
       )}
 
-      <div className="umingle-chat__log umingle-chat__log--compact" ref={logRef} role="log">
+      <div className="umingle-chat__log umingle-chat__log--compact" role="log">
         {room.messages.length === 0 && (
           <p className="umingle-chat__empty">Text while on video.</p>
         )}
