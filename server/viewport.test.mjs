@@ -16,6 +16,7 @@ test('phone shell scales a 390×844 frame with no document or main scroll', () =
   assert.equal(/overflow-y:\s*auto/.test(css), false)
   assert.equal(/overflow:\s*auto/.test(css), false)
   assert.equal(/overflow:\s*scroll/.test(css), false)
+  assert.match(css, /\.app__main[\s\S]*?overflow:\s*clip/)
   assert.match(base, /overflow:\s*hidden/)
   assert.match(base, /100dvh/)
   assert.match(base, /100svh/)

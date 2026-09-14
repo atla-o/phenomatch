@@ -76,6 +76,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  overflow: clip;
   display: flex;
   flex-direction: column;
 }
@@ -380,6 +381,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  overflow: clip;
   justify-content: space-between;
 }
 
@@ -781,6 +783,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  overflow: clip;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -891,6 +894,7 @@
   flex: 1 1 auto;
   min-height: 198px;
   overflow: hidden;
+  overflow: clip;
   display: flex;
   flex-direction: column;
   border-top: 1px solid var(--black);
