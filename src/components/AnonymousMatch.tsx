@@ -137,6 +137,7 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
           guestId={guestId}
           localStream={camera.stream}
           cameraError={camera.error}
+          onEnableCamera={camera.retry}
           onRoom={setRoom}
           onSkip={() => void pollLive(room.peer?.guestId, { markJoining: true })}
           onLeave={() => {
@@ -207,13 +208,20 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
               stream={camera.stream}
               muted
               mirrored
+              localPreview
               filterOn={filter.enabled}
               severity={filter.severity}
               label="Your camera"
             />
           ) : (
-            <div className="umingle-self__fallback">
-              <p>{camera.error || 'Camera preview'}</p>
+            <div className="umingle-self__fallback anon__preview-fallback">
+              <p>
+                {camera.error ||
+                  (camera.requesting ? 'Waiting for camera…' : 'Camera preview')}
+              </p>
+              <button type="button" className="btn btn--outline" onClick={camera.retry}>
+                Enable camera
+              </button>
             </div>
           )}
         </div>

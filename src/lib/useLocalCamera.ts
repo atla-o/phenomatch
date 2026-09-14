@@ -1,47 +1,50 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { cameraErrorMessage, isAbortError, requestLocalCamera } from './localCamera'
 
 export function useLocalCamera() {
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
+  const [requesting, setRequesting] = useState(true)
+  const [retryKey, setRetryKey] = useState(0)
+
+  const retry = useCallback(() => {
+    setError(null)
+    setReady(false)
+    setRequesting(true)
+    setRetryKey((key) => key + 1)
+  }, [])
 
   useEffect(() => {
+    const controller = new AbortController()
     let active: MediaStream | null = null
-    let cancelled = false
 
     const start = async () => {
       try {
-        try {
-          active = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-            audio: true,
-          })
-        } catch {
-          active = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user' },
-            audio: false,
-          })
-        }
-        if (cancelled) {
-          active.getTracks().forEach((track) => track.stop())
+        active = await requestLocalCamera({ signal: controller.signal })
+        if (controller.signal.aborted) {
+          active?.getTracks().forEach((track) => track.stop())
           return
         }
         setStream(active)
         setReady(true)
-      } catch {
-        if (!cancelled) {
-          setError('Camera is blocked or missing. Enable it in Chrome to send video.')
-          setReady(false)
-        }
+        setError(null)
+      } catch (err) {
+        if (controller.signal.aborted || isAbortError(err as { name?: string })) return
+        setStream(null)
+        setReady(false)
+        setError(cameraErrorMessage(err as { name?: string }))
+      } finally {
+        if (!controller.signal.aborted) setRequesting(false)
       }
     }
 
     void start()
     return () => {
-      cancelled = true
+      controller.abort()
       active?.getTracks().forEach((track) => track.stop())
     }
-  }, [])
+  }, [retryKey])
 
-  return { stream, error, ready }
+  return { stream, error, ready, requesting, retry }
 }
