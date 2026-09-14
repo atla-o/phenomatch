@@ -2,7 +2,7 @@ import http from 'node:http'
 import { gcpConfig, gcpStatus } from './gcp.mjs'
 import { createStore } from './store.mjs'
 import { queryMatches } from './matching.mjs'
-import { userPhenotype, matches, filterOptions, scanSteps } from './catalog.mjs'
+import { userPhenotype, matches, filterOptions, scanSteps, hasAnalyzedTraits, assignPhenotypeFromScan } from './catalog.mjs'
 import { createUmingle } from './umingle.mjs'
 import { hasStaticUi, serveStatic } from './static.mjs'
 import { iceServersFromEnv, hasTurnServer } from '../shared/ice-servers.mjs'
@@ -126,15 +126,28 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/phenotype/scan') {
       const body = await readJson(req)
       const profileId = profileIdOf(req, body)
-      const current = body.phenotype || (await store.getPhenotype(profileId)).phenotype
-      const phenotype = await store.savePhenotype(profileId, current)
+      const current = (await store.getPhenotype(profileId)).phenotype
+      const analyzed = body.traits || body.phenotype?.traits
+      const phenotype = hasAnalyzedTraits(analyzed)
+        ? assignPhenotypeFromScan(analyzed, {
+            suggestedTypeId: body.typeId || body.phenotype?.id,
+            extra: {
+              ...(body.metrics?.extra || body.extra || {}),
+              landmarkCount: body.metrics?.landmarkCount,
+            },
+            gene: current,
+            source: body.metrics?.source || body.source || 'camera',
+          })
+        : current
+      const saved = await store.savePhenotype(profileId, phenotype)
       send(res, 200, {
-        phenotype,
+        phenotype: saved,
         hasProfile: true,
         profileId,
         scanned: true,
+        assignedTypeId: saved.id,
         source: store.mode,
-        note: 'Optical scan result persisted. Camera capture stays on the Mac client.',
+        note: 'Heritage type assigned from visible bone, shade, and tribal identifiers. Cluster fit, not a medical or genetic test.',
       })
       return
     }

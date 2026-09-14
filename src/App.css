@@ -153,10 +153,109 @@
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  margin-bottom: 8px;
+  margin: 8px 0 6px;
   border-bottom: 1px solid var(--black);
-  padding-bottom: 6px;
+  padding-bottom: 4px;
   flex-shrink: 0;
+}
+
+.heritage {
+  flex-shrink: 0;
+}
+
+.heritage__kicker {
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.heritage__title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 0 4px;
+}
+
+.heritage__name {
+  font-size: 0.95rem;
+}
+
+.heritage__code {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+
+.heritage__fit {
+  font-size: 0.68rem;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.genome {
+  margin-top: 2px;
+}
+
+.genome__kicker {
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 3px;
+}
+
+.genome-strip {
+  display: flex;
+  height: 10px;
+  border: 1px solid var(--black);
+  margin-bottom: 6px;
+}
+
+.genome-strip__band {
+  min-width: 4px;
+  height: 100%;
+  border-right: 1px solid var(--black);
+}
+
+.genome-strip__band:last-child {
+  border-right: none;
+}
+
+.genome-strip__band--bone { background: #000; opacity: 0.85; }
+.genome-strip__band--cartilage { background: #000; opacity: 0.65; }
+.genome-strip__band--hair { background: #000; opacity: 0.5; }
+.genome-strip__band--shade { background: #000; opacity: 0.35; }
+.genome-strip__band--tribe { background: #000; opacity: 1; }
+
+.genome-markers {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.genome-markers__row {
+  display: grid;
+  grid-template-columns: 76px 1fr 28px 28px;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.58rem;
+  letter-spacing: 0.02em;
+}
+
+.genome-markers__id {
+  font-family: var(--font-display);
+}
+
+.genome-markers__call,
+.genome-markers__value {
+  text-align: right;
+  font-family: var(--font-display);
+}
+
+.genome-note {
+  font-size: 0.58rem;
+  line-height: 1.3;
+  margin-top: 6px;
 }
 
 .pheno__intro {
@@ -172,6 +271,22 @@
   padding: 16px;
 }
 
+.pheno__markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+
+.pheno__marker {
+  border: 1px solid var(--black);
+  padding: 3px 6px;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* ── Scan panel (inside pheno) ── */
 
 .scan-panel {
@@ -185,7 +300,8 @@
 
 .scan-panel__intro {
   border: 1px solid var(--black);
-  padding: 16px;
+  padding: 10px 12px;
+  flex-shrink: 0;
 }
 
 .scan-panel__heading {
@@ -218,6 +334,7 @@
 .scan-panel__viewport {
   display: flex;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .scan-panel__frame {
@@ -318,12 +435,14 @@
   font-size: 0.82rem;
   text-align: center;
   min-height: 1.2em;
+  flex-shrink: 0;
 }
 
 .scan-panel__progress {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .scan-panel__progress-bar {
@@ -351,7 +470,11 @@
   flex-direction: column;
   gap: 4px;
   border-top: 1px solid var(--black);
-  padding-top: 12px;
+  padding-top: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  overflow: clip;
 }
 
 .scan-panel__detected-item {
@@ -370,6 +493,16 @@
   margin-left: auto;
   font-family: var(--font-display);
   font-weight: 600;
+}
+
+.scan-panel__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.scan-panel__actions .btn {
+  flex: 1;
 }
 
 /* ── Traits ── */

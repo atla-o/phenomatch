@@ -180,11 +180,19 @@ export async function uploadGene(file: File): Promise<Phenotype> {
   return body.phenotype
 }
 
-export async function runSimulatedScan(): Promise<Phenotype> {
+export async function submitPhenotypeScan(payload: {
+  traits: Record<string, number>
+  typeId?: string
+  metrics?: {
+    extra?: Record<string, number>
+    landmarkCount?: number
+    source?: string
+  }
+}): Promise<Phenotype> {
   const res = await fetch('/api/phenotype/scan', {
     method: 'POST',
     headers: apiHeaders(true),
-    body: JSON.stringify({}),
+    body: JSON.stringify(payload),
   })
   if (!res.ok) throw new Error(await readError(res, 'scan failed'))
   const body = (await res.json()) as { phenotype: Phenotype }

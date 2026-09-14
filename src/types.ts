@@ -7,6 +7,33 @@ export type Trait = {
   displayValue?: string
 }
 
+export type TribalMarker = Trait
+
+export type PhenotypeScanMeta = {
+  source?: string
+  distance?: number
+  landmarkCount?: number | null
+}
+
+export type GenomeMarker = {
+  id: string
+  group: string
+  locus: string
+  label: string
+  value: number
+  call: string
+}
+
+export type GenomeReadout = {
+  kind: 'phenotype-derived'
+  headline: string
+  code: string
+  clusterFit: number
+  note: string
+  markers: GenomeMarker[]
+  bands: Array<{ id: string; group: string; value: number }>
+}
+
 export type Phenotype = {
   id: string
   name: string
@@ -17,6 +44,10 @@ export type Phenotype = {
   genealogyLineage: string
   geneLinked?: boolean
   geneFileName?: string
+  tribalMarkers?: TribalMarker[]
+  genomeReadout?: GenomeReadout
+  scanConfidence?: number
+  scan?: PhenotypeScanMeta
 }
 
 export type VirginityStatus = 'virgin' | 'non-virgin' | 'undisclosed'
