@@ -13,7 +13,7 @@ npm install
 npm run cloud -- --host 0.0.0.0 --port 5173
 ```
 
-Black-and-white Pheno / Match UI. Pheno scans a cluster profile and can upload a gene file to link genealogy. Match opens with Data and Anon toolbars (same chip/bar pattern as Pheno’s upload gene / rescan). Data is swipe matching with collapsible virginity / genealogy / age filters. Anon is anonymous phenotype-similar live video (50%+) in Chrome: real presence, browser WebRTC, and text. Catalog seeds stay on Data only. An Antiporn-style region filter is on by default. `/api/umingle/*` is the backend reference, not a nav tab.
+Black-and-white Pheno / Match UI. Pheno scans a cluster profile and can upload a gene file to link genealogy. Match opens with Data and Anon toolbars (same chip/bar pattern as Pheno’s upload gene / rescan). Data is swipe matching with collapsible virginity / genealogy / age filters. Anon is anonymous phenotype-similar live video in Chrome: real presence, browser WebRTC, and text. Prefers 50%+ similarity and still pairs two live guests (best available) so chat is not stranded. Catalog seeds stay on Data only. An Antiporn-style region filter is on by default. `/api/umingle/*` is the backend reference, not a nav tab.
 
 See [docs/cloud.md](docs/cloud.md) and [gcp/README.md](gcp/README.md).
 

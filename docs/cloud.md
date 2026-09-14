@@ -24,7 +24,7 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 | POST | `/api/phenotype/gene` | Link a genealogy / gene file to the phenotype |
 | POST | `/api/matches` | Ranked data matches for filters |
 | POST | `/api/umingle/join` | Join the Anon lobby (heartbeat + live peers only) |
-| POST | `/api/umingle/live` | Seek a similar live guest (50%+). Returns `waiting` when alone |
+| POST | `/api/umingle/live` | Seek a live guest (prefers 50%+, pairs best available). Returns `waiting` when alone |
 | POST | `/api/umingle/heartbeat` | Presence + assigned room |
 | POST | `/api/umingle/leave` | Leave a room or go offline |
 | POST | `/api/umingle/signal` | WebRTC offer / answer / ICE (atomic append) |
@@ -34,7 +34,7 @@ npm run cloud -- --host 0.0.0.0 --port 5173
 | POST | `/api/umingle/chat/:id/messages` | Send a chat message |
 | POST | `/api/umingle/chat/:id/restart` | Clear signals and bump `callId` |
 
-Match ranking combines visual traits, tribe, and genealogy. Match uses Data and Anon toolbars at the top of the section. Data filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon is live WebRTC video + text with someone at 50%+ phenotype similarity who is actually online. Catalog seeds are Data-only. `/api/umingle/*` still powers that pane.
+Match ranking combines visual traits, tribe, and genealogy. Match uses Data and Anon toolbars at the top of the section. Data filters are virginity, genealogy minimum, and age range (collapsible; swipe sits above them). Anon is live WebRTC video + text. It prefers 50%+ phenotype similarity and still pairs two live guests (best available) so chat works. Catalog seeds are Data-only. `/api/umingle/*` still powers that pane.
 
 Anon WebRTC uses extra STUN plus public Open Relay / Metered TURN by default (`GET /api/ice`). Concurrent offer/answer/ICE posts append atomically (Firestore transaction in `devo-holding`, locked append in memory). If ICE does not reach `connected` in about 10s the offerer renegotiates; after about 18s the UI shows **Couldn't connect video — retry**, which bumps `callId` and clears signals. Override ICE with `PHENOMATCH_ICE_SERVERS` (JSON) or `PHENOMATCH_TURN_URLS` + `PHENOMATCH_TURN_USERNAME` + `PHENOMATCH_TURN_CREDENTIAL` — no Devo secrets required for the public defaults.
 

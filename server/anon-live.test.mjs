@@ -5,8 +5,11 @@ import {
   PRESENCE_TTL_MS,
   isLiveGuest,
   isOfferer,
+  isPairableGuest,
   isValidSignalType,
   pruneSignals,
+  selectPairingPicks,
+  shouldGoOfflineOn,
   signalsForPeer,
 } from '../shared/anon-live.mjs'
 
@@ -18,6 +21,50 @@ describe('anon live helpers', () => {
     assert.equal(isLiveGuest({ seeded: false, lastSeen: now - PRESENCE_TTL_MS - 1, status: 'seeking' }, now), false)
     assert.equal(isLiveGuest({ seeded: false, lastSeen: now, status: 'offline' }, now), false)
     assert.equal(isLiveGuest({ seeded: false, lastSeen: 0, status: 'lobby' }, now), false)
+    assert.equal(isPairableGuest({ seeded: false, lastSeen: now, status: 'lobby' }, now), true)
+    assert.equal(isPairableGuest({ seeded: false, lastSeen: now, status: 'seeking' }, now), true)
+    assert.equal(isPairableGuest({ seeded: false, lastSeen: now, status: 'connected' }, now), false)
+    assert.equal(isPairableGuest({ seeded: false, lastSeen: now, status: 'offline' }, now), false)
+  })
+
+  it('does not force offline on React unmount', () => {
+    assert.equal(shouldGoOfflineOn('unmount'), false)
+    assert.equal(shouldGoOfflineOn('visibilitychange'), false)
+    assert.equal(shouldGoOfflineOn('pagehide'), true)
+    assert.equal(shouldGoOfflineOn('beforeunload'), true)
+  })
+
+  it('prefers 50%+ then falls back to best available for two live guests', () => {
+    const ranked = [
+      { id: 'low', compatibility: 22 },
+      { id: 'high', compatibility: 61 },
+    ]
+    assert.deepEqual(
+      selectPairingPicks(ranked, { otherLiveCount: 2, selfSeeking: true, seekingPeerCount: 1 }).picks.map(
+        (item) => item.id,
+      ),
+      ['high'],
+    )
+    const onlyLow = [{ id: 'low', compatibility: 22 }]
+    const fallback = selectPairingPicks(onlyLow, {
+      otherLiveCount: 1,
+      selfSeeking: true,
+      seekingPeerCount: 0,
+    })
+    assert.equal(fallback.mode, 'best-available')
+    assert.equal(fallback.picks[0].id, 'low')
+    const stranded = selectPairingPicks(onlyLow, {
+      otherLiveCount: 3,
+      selfSeeking: true,
+      seekingPeerCount: 0,
+    })
+    assert.equal(stranded.mode, 'none')
+    const bothSeeking = selectPairingPicks(onlyLow, {
+      otherLiveCount: 2,
+      selfSeeking: true,
+      seekingPeerCount: 1,
+    })
+    assert.equal(bothSeeking.mode, 'best-available')
   })
 
   it('picks a stable WebRTC offerer', () => {

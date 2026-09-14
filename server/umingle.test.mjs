@@ -3,10 +3,22 @@ import { describe, it } from 'node:test'
 import { userPhenotype, matches } from './catalog.mjs'
 import { memoryDatastore } from './memory-store.mjs'
 import { ANON_MIN_COMPAT, PRESENCE_TTL_MS, createUmingle } from './umingle.mjs'
+import { isLiveGuest } from '../shared/anon-live.mjs'
 
 function fresh(clock = { now: Date.now() }) {
   const store = memoryDatastore({ userPhenotype, matches })
   return createUmingle(store, { now: () => clock.now })
+}
+
+function farPhenotype() {
+  return {
+    ...userPhenotype,
+    id: 'far-cluster',
+    name: 'Far Cluster',
+    code: 'GN-FAR',
+    genealogyLikelihood: 0,
+    traits: userPhenotype.traits.map((trait) => ({ ...trait, value: 0 })),
+  }
 }
 
 describe('umingle', () => {
@@ -48,17 +60,16 @@ describe('umingle', () => {
     const umingle = fresh()
     const a = await umingle.join({ phenotype: userPhenotype })
     const b = await umingle.join({ phenotype: userPhenotype })
-    assert.equal(await umingle.connectSimilar(a), null)
-    const room = await umingle.connectSimilar(b)
+    const room = await umingle.connectSimilar(a)
     assert.ok(room)
     assert.ok((room.compatibility ?? 0) >= ANON_MIN_COMPAT)
-    assert.equal(room.peer.guestId, a.id)
+    assert.equal(room.peer.guestId, b.id)
     assert.equal(room.messages.length, 0)
     assert.ok(room.callId)
 
-    const forA = await umingle.connectSimilar(a)
-    assert.equal(forA.id, room.id)
-    assert.equal(forA.peer.guestId, b.id)
+    const forB = await umingle.connectSimilar(b)
+    assert.equal(forB.id, room.id)
+    assert.equal(forB.peer.guestId, a.id)
   })
 
   it('does not auto-reply and exchanges signals', async () => {
@@ -149,5 +160,81 @@ describe('umingle', () => {
     assert.equal(skipped, null)
     const leftover = await umingle.getChat(room.id, a.id)
     assert.equal(leftover.peerLeft, true)
+  })
+
+  it('heartbeat keeps seeking presence without going offline', async () => {
+    const clock = { now: 3_000_000 }
+    const umingle = fresh(clock)
+    const a = await umingle.join({ phenotype: userPhenotype })
+    assert.equal(await umingle.connectSimilar(a), null)
+    const beat = await umingle.heartbeat(a.id)
+    assert.equal(beat.guest.status, 'seeking')
+    assert.equal(isLiveGuest(beat.guest, clock.now), true)
+  })
+
+  it('leave without goOffline stays live in lobby', async () => {
+    const clock = { now: 4_000_000 }
+    const umingle = fresh(clock)
+    const a = await umingle.join({ phenotype: userPhenotype })
+    await umingle.connectSimilar(a)
+    const left = await umingle.leave(a.id, { goOffline: false })
+    assert.equal(left.status, 'lobby')
+    assert.equal(isLiveGuest(left, clock.now), true)
+    const offline = await umingle.leave(a.id, { goOffline: true })
+    assert.equal(offline.status, 'offline')
+    assert.equal(isLiveGuest(offline, clock.now), false)
+  })
+
+  it('pairs a seeking guest with a live lobby peer', async () => {
+    const umingle = fresh()
+    const a = await umingle.join({ phenotype: userPhenotype })
+    const b = await umingle.join({ phenotype: userPhenotype })
+    const room = await umingle.connectSimilar(b)
+    assert.ok(room)
+    assert.equal(room.peer.guestId, a.id)
+    const forA = await umingle.heartbeat(a.id)
+    assert.equal(forA.room.id, room.id)
+  })
+
+  it('pairs two live guests below 50% when they are the only ones', async () => {
+    const umingle = fresh()
+    const a = await umingle.join({ phenotype: userPhenotype })
+    const b = await umingle.join({ phenotype: farPhenotype() })
+    const ranked = await umingle.listMatches(a)
+    assert.ok(ranked[0].compatibility < ANON_MIN_COMPAT)
+    const room = await umingle.connectSimilar(a)
+    assert.ok(room)
+    assert.equal(room.peer.guestId, b.id)
+    assert.ok((room.compatibility ?? 0) < ANON_MIN_COMPAT)
+  })
+
+  it('pairs when both guests go live at once', async () => {
+    const umingle = fresh()
+    const a = await umingle.join({ phenotype: userPhenotype })
+    const b = await umingle.join({ phenotype: userPhenotype })
+    const [first, second] = await Promise.all([umingle.connectSimilar(a), umingle.connectSimilar(b)])
+    const room = first || second
+    assert.ok(room)
+    const againA = await umingle.connectSimilar(a)
+    const againB = await umingle.connectSimilar(b)
+    assert.equal(againA.id, againB.id)
+    assert.equal(againA.id, room.id)
+  })
+
+  it('openChat assigns a room both heartbeats can see', async () => {
+    const umingle = fresh()
+    const a = await umingle.join({ phenotype: userPhenotype })
+    const b = await umingle.join({ phenotype: userPhenotype })
+    const room = await umingle.openChat(a.id, b.id, 41)
+    assert.equal(room.peer.guestId, b.id)
+    assert.equal(room.compatibility, 41)
+    const beatA = await umingle.heartbeat(a.id)
+    const beatB = await umingle.heartbeat(b.id)
+    assert.equal(beatA.room.id, room.id)
+    assert.equal(beatB.room.id, room.id)
+    assert.equal(beatA.guest.status, 'connected')
+    assert.equal(beatB.guest.status, 'connected')
+    const sent = await umingle.postMessage(room.id, a.id, 'text works without video')
+    assert.equal(sent.messages[0].text, 'text works without video')
   })
 })

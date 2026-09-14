@@ -36,6 +36,7 @@ export type Match = {
   matchType?: MatchType
   guestId?: string
   anonymous?: boolean
+  status?: string
 }
 
 export type MatchFilters = {

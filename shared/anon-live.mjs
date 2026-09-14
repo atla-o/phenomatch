@@ -8,6 +8,8 @@ export const SIGNAL_POLL_MS = 400
 export const ICE_RENEGOTIATE_MS = 10_000
 export const ICE_FAIL_MS = 18_000
 export const CONNECT_FAIL_COPY = "Couldn't connect video — retry"
+export const PAIRABLE_STATUSES = ['lobby', 'seeking']
+export const PAIR_ATTEMPTS = 3
 
 export function isLiveGuest(guest, now = Date.now(), ttlMs = PRESENCE_TTL_MS) {
   if (!guest || guest.seeded) return false
@@ -15,6 +17,39 @@ export function isLiveGuest(guest, now = Date.now(), ttlMs = PRESENCE_TTL_MS) {
   const seen = Number(guest.lastSeen || 0)
   if (!Number.isFinite(seen) || seen <= 0) return false
   return now - seen <= ttlMs
+}
+
+export function isPairableStatus(status) {
+  return status === 'lobby' || status === 'seeking'
+}
+
+export function isPairableGuest(guest, now = Date.now(), ttlMs = PRESENCE_TTL_MS) {
+  return isLiveGuest(guest, now, ttlMs) && isPairableStatus(guest.status)
+}
+
+/** React unmount / tab remount must not force offline. Page close does. */
+export function shouldGoOfflineOn(reason) {
+  return reason === 'pagehide' || reason === 'beforeunload'
+}
+
+export function selectPairingPicks(ranked, options = {}) {
+  const list = Array.isArray(ranked) ? ranked : []
+  const minCompat = Number.isFinite(Number(options.minCompat))
+    ? Number(options.minCompat)
+    : ANON_MIN_COMPAT
+  const otherLiveCount = Number(options.otherLiveCount) || 0
+  const seekingPeerCount = Number(options.seekingPeerCount) || 0
+  const selfSeeking = Boolean(options.selfSeeking)
+  const similar = list.filter((item) => (item?.compatibility ?? 0) >= minCompat)
+  if (similar.length) {
+    return { picks: similar, mode: 'similar' }
+  }
+  const onlyOtherLive = otherLiveCount === 1
+  const bothSeeking = selfSeeking && seekingPeerCount > 0
+  if ((onlyOtherLive || bothSeeking) && list.length) {
+    return { picks: list, mode: 'best-available' }
+  }
+  return { picks: [], mode: 'none' }
 }
 
 export function isOfferer(localId, remoteId) {

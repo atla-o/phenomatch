@@ -198,9 +198,9 @@ const server = http.createServer(async (req, res) => {
           phenotype: guest.phenotype,
           status: guest.status,
         },
-        matches: snapshot.similar,
+        matches: snapshot.matches,
         total: snapshot.liveCount,
-        returned: snapshot.similar.length,
+        returned: snapshot.matches.length,
         liveCount: snapshot.liveCount,
         similarCount: snapshot.similarCount,
         matchType: 'anonymous',
@@ -248,11 +248,13 @@ const server = http.createServer(async (req, res) => {
         },
         room,
         waiting: !room,
+        matches: snapshot.matches,
         liveCount: snapshot.liveCount,
         similarCount: snapshot.similarCount,
         matchType: 'anonymous',
         account: 'none',
         minCompatibility: 50,
+        pairing: (room?.compatibility ?? 0) >= 50 ? 'similar' : room ? 'best-available' : 'none',
         source: store.mode,
       })
       return
@@ -275,7 +277,7 @@ const server = http.createServer(async (req, res) => {
           status: beat.guest.status,
         },
         room: beat.room,
-        matches: snapshot.similar,
+        matches: snapshot.matches,
         liveCount: snapshot.liveCount,
         similarCount: snapshot.similarCount,
         matchType: 'anonymous',
@@ -308,7 +310,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && url.pathname === '/api/umingle/chat') {
       const body = await readJson(req)
-      const room = await umingle.openChat(body.guestId, body.peerGuestId)
+      const room = await umingle.openChat(body.guestId, body.peerGuestId, body.compatibility)
       send(res, 200, { room, matchType: 'anonymous', account: 'none', source: store.mode })
       return
     }

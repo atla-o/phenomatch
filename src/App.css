@@ -1456,12 +1456,30 @@
 }
 
 .anon__live-list li {
+  margin: 0;
+}
+
+.anon__live-list button {
   display: flex;
   justify-content: space-between;
   gap: 8px;
   border: 1px solid var(--black);
   padding: 6px 8px;
   font-size: 0.72rem;
+  width: 100%;
+  text-align: left;
+  background: var(--white);
+  min-height: 36px;
+}
+
+.anon__live-list button:hover,
+.anon__live-list button:focus-visible {
+  background: var(--black);
+  color: var(--white);
+}
+
+.anon__live-list button:disabled {
+  opacity: 0.5;
 }
 
 .anon__waiting {
