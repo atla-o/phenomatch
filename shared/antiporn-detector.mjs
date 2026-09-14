@@ -29,11 +29,21 @@ export function isSkinPixel(r, g, b) {
   return ycbcr || (hsv && rgbRule)
 }
 
-export function detectNudity(image, severity, sourceWidth, sourceHeight) {
+function clusterRatio(cluster, pixels) {
+  return cluster.count / Math.max(pixels, 1)
+}
+
+function clusterCenterY(cluster, height) {
+  return (cluster.y0 + cluster.y1) / 2 / Math.max(height, 1)
+}
+
+export function detectNudity(image, severity, sourceWidth, sourceHeight, options = {}) {
+  const localPreview = Boolean(options.localPreview)
   const { data, width: w, height: h } = image
-  const mask = new Uint8Array(w * h)
+  const pixels = w * h
+  const mask = new Uint8Array(pixels)
   let skinCount = 0
-  for (let i = 0; i < w * h; i++) {
+  for (let i = 0; i < pixels; i++) {
     const o = i * 4
     if (data[o + 3] < 20) continue
     if (isSkinPixel(data[o], data[o + 1], data[o + 2])) {
@@ -41,10 +51,10 @@ export function detectNudity(image, severity, sourceWidth, sourceHeight) {
       skinCount++
     }
   }
-  const skinRatio = skinCount / (w * h)
-  const visited = new Uint8Array(w * h)
+  const skinRatio = skinCount / pixels
+  const visited = new Uint8Array(pixels)
   const clusters = []
-  for (let i = 0; i < w * h; i++) {
+  for (let i = 0; i < pixels; i++) {
     if (!mask[i] || visited[i]) continue
     let count = 0
     let x0 = w
@@ -80,26 +90,34 @@ export function detectNudity(image, severity, sourceWidth, sourceHeight) {
   }
   clusters.sort((a, b) => b.count - a.count)
   const t = Math.max(0, Math.min(100, severity)) / 100
-  const minRatio = 0.004 + t * 0.03
+  const minRatio = (0.004 + t * 0.03) * (localPreview ? 1.6 : 1)
   const compactFloor = 0.22 + t * 0.28
+  const multi = clusters.filter((c) => clusterRatio(c, pixels) >= 0.03).length >= 2
+  const lowerHeavy = clusters.some(
+    (c) => clusterCenterY(c, h) > 0.52 && clusterRatio(c, pixels) >= 0.04,
+  )
   const explicitLikely =
     skinRatio >= 0.22 ||
-    (clusters[0] && clusters[0].count / (w * h) >= 0.08 && skinRatio >= 0.12) ||
-    clusters.filter((c) => c.count / (w * h) >= 0.03).length >= 2
+    (clusters[0] && clusterRatio(clusters[0], pixels) >= 0.08 && skinRatio >= 0.12) ||
+    multi
+  // Face close-ups easily exceed skinRatio 0.22. A full hide needs lower-body
+  // or multiple clusters — not a single upper/center skin patch.
+  const strongExplicit = Boolean(lowerHeavy || (multi && skinRatio >= 0.16))
   const boxes = []
   const scaleX = sourceWidth / w
   const scaleY = sourceHeight / h
+  const forceSignal = localPreview ? strongExplicit : explicitLikely
   for (const c of clusters) {
     const cw = c.x1 - c.x0 + 1
     const ch = c.y1 - c.y0 + 1
     const fill = c.count / Math.max(cw * ch, 1)
-    const ratio = c.count / (w * h)
-    const lowerBias = (c.y0 + c.y1) / 2 / h > 0.35 ? 1 : 0.75
+    const ratio = clusterRatio(c, pixels)
+    const lowerBias = clusterCenterY(c, h) > 0.35 ? 1 : 0.75
     const hardScore = fill * lowerBias * Math.min(1, ratio / 0.05)
     const passSoft = ratio >= minRatio && fill >= 0.18
     const passHard = hardScore >= compactFloor && ratio >= minRatio
     const pass = t < 0.55 ? passSoft : passHard
-    const force = explicitLikely && ratio >= 0.012
+    const force = forceSignal && ratio >= 0.012
     if (!pass && !force) continue
     const pw = cw * 1.08
     const ph = ch * 1.08
@@ -113,24 +131,31 @@ export function detectNudity(image, severity, sourceWidth, sourceHeight) {
       kind: force || hardScore > 0.55 ? 'explicit' : 'skin',
     })
   }
-  if (explicitLikely && boxes.length === 0 && clusters[0]) {
+  if (forceSignal && boxes.length === 0 && clusters[0]) {
     const c = clusters[0]
     const sizePx = Math.max((c.x1 - c.x0 + 1) * scaleX, (c.y1 - c.y0 + 1) * scaleY) * 1.15
     const mx = ((c.x0 + c.x1 + 1) / 2) * scaleX
     const my = ((c.y0 + c.y1 + 1) / 2) * scaleY
     boxes.push({ x: mx - sizePx / 2, y: my - sizePx / 2, size: sizePx, kind: 'explicit' })
   }
-  return { boxes, explicitLikely, skinRatio }
+  return { boxes, explicitLikely, strongExplicit, skinRatio }
 }
 
-export function filterDecision(result, { enabled = true, hideOnExplicit = true } = {}) {
+export function filterDecision(
+  result,
+  { enabled = true, hideOnExplicit = true, localPreview = false } = {},
+) {
   if (!enabled || !result) {
-    return { boxes: [], explicitLikely: false, hide: false, skinRatio: 0 }
+    return { boxes: [], explicitLikely: false, strongExplicit: false, hide: false, skinRatio: 0 }
   }
+  const strongExplicit = Boolean(result.strongExplicit)
   return {
     boxes: result.boxes || [],
     explicitLikely: Boolean(result.explicitLikely),
-    hide: Boolean(hideOnExplicit && result.explicitLikely),
+    strongExplicit,
+    // Local self-preview never becomes a full Filtered wall. Remote still
+    // hides, but only on stronger-than-skin-ratio signals.
+    hide: Boolean(!localPreview && hideOnExplicit && strongExplicit),
     skinRatio: Number(result.skinRatio) || 0,
   }
 }

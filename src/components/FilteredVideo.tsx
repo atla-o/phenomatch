@@ -11,6 +11,7 @@ type Props = {
   severity: number
   label: string
   className?: string
+  localPreview?: boolean
 }
 
 export function FilteredVideo({
@@ -21,6 +22,7 @@ export function FilteredVideo({
   severity,
   label,
   className = '',
+  localPreview = false,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [boxes, setBoxes] = useState<Box[]>([])
@@ -53,12 +55,20 @@ export function FilteredVideo({
         if (video && video.readyState >= 2) {
           const raster = rasterFromElement(video, 120)
           if (raster) {
-            const detected = detectNudity(raster.image, severity, raster.width, raster.height)
-            const decision = filterDecision(detected, { enabled: true, hideOnExplicit: true })
+            const detected = detectNudity(raster.image, severity, raster.width, raster.height, {
+              localPreview,
+            })
+            const decision = filterDecision(detected, {
+              enabled: true,
+              hideOnExplicit: !localPreview,
+              localPreview,
+            })
             setBoxes(decision.boxes)
             setHidden(decision.hide)
-            if (decision.hide) video.pause()
-            else if (video.paused) void video.play().catch(() => undefined)
+            // Never pause the local self preview. A face close-up used to trip
+            // hideOnExplicit and leave the element paused on a Filtered wall.
+            if (decision.hide && !localPreview) video.pause()
+            else if (video.paused && stream) void video.play().catch(() => undefined)
           }
         }
       }
@@ -66,7 +76,7 @@ export function FilteredVideo({
     }
     frame = window.requestAnimationFrame(tick)
     return () => window.cancelAnimationFrame(frame)
-  }, [filterOn, severity, stream])
+  }, [filterOn, localPreview, severity, stream])
 
   return (
     <div className={`filtered-video${className ? ` ${className}` : ''}`}>
