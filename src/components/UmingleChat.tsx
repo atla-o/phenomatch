@@ -11,6 +11,7 @@ type Props = {
   guestId: string
   localStream: MediaStream | null
   cameraError: string | null
+  onEnableCamera?: () => void
   onRoom: (room: UmingleRoom) => void
   onSkip: () => void
   onLeave: () => void
@@ -22,6 +23,7 @@ export function UmingleChat({
   guestId,
   localStream,
   cameraError,
+  onEnableCamera,
   onRoom,
   onSkip,
   onLeave,
@@ -168,16 +170,14 @@ export function UmingleChat({
                 stream={localStream}
                 muted
                 mirrored
+                localPreview
                 filterOn={filter.enabled}
                 severity={filter.severity}
                 label="Your camera"
               />
             ) : (
-              <div className="umingle-self__fallback" aria-hidden="true">
-                <svg viewBox="0 0 200 260" fill="none">
-                  <ellipse cx="100" cy="95" rx="62" ry="72" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="M55 200 Q100 240 145 200" stroke="currentColor" strokeWidth="1.5" />
-                </svg>
+              <div className="umingle-self__fallback">
+                <p>{cameraError || 'Waiting for camera…'}</p>
               </div>
             )}
           </div>
@@ -186,9 +186,18 @@ export function UmingleChat({
       </div>
 
       {(cameraError || signalError || peerGone) && (
-        <p className="umingle__error" role="status">
-          {peerGone ? 'The other guest left. Skip to find someone else, or leave.' : cameraError || signalError}
-        </p>
+        <div className="umingle__error" role="status">
+          <p>
+            {peerGone
+              ? 'The other guest left. Skip to find someone else, or leave.'
+              : cameraError || signalError}
+          </p>
+          {cameraError && onEnableCamera && (
+            <button type="button" className="btn btn--outline" onClick={onEnableCamera}>
+              Enable camera
+            </button>
+          )}
+        </div>
       )}
 
       <div className="umingle-chat__log umingle-chat__log--compact" ref={logRef} role="log">

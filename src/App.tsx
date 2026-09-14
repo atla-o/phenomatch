@@ -49,7 +49,7 @@ function App() {
     <div className="app">
       <div className="app__phone">
         <header className="app__status-bar">
-          <span className="app__logo">o</span>
+          <a className="app__logo" href="https://devoutshaman.com" aria-label="devoutshaman.com">o</a>
         </header>
 
         <main className="app__main">

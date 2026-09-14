@@ -81,6 +81,9 @@ export function serveStatic(req, res, urlPath, root = resolveStaticDir()) {
     'content-type': mimeFor(filePath),
     'cache-control': ext === '.html' ? 'no-store' : 'public, max-age=31536000, immutable',
   }
+  if (ext === '.html') {
+    headers['permissions-policy'] = 'camera=(self), microphone=(self)'
+  }
 
   if (req.method === 'HEAD') {
     res.writeHead(200, headers)
