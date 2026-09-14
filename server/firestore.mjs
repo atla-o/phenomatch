@@ -4,7 +4,7 @@
  */
 
 import { gcpBaseStatus, gcpConfig } from './gcp.mjs'
-import { candidateFromPhenotype, seedGuestFromMatch } from './umingle-models.mjs'
+import { candidateFromPhenotype } from './umingle-models.mjs'
 
 const PING_MS = Number(process.env.FIRESTORE_PING_MS || 2500)
 
@@ -169,11 +169,6 @@ async function seedIfNeeded(db, catalog) {
       ...match,
       id: match.phenotype.id,
       seeded: true,
-      updatedAt: now,
-    }))
-    const guest = seedGuestFromMatch(match)
-    batch.set(db.collection(gcpConfig.collections.umingleGuests).doc(guest.id), jsonSafe({
-      ...guest,
       updatedAt: now,
     }))
   }

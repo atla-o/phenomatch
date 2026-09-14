@@ -2,10 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { UmingleRoom } from '../api/client'
 import { fetchUmingleChat, sendUmingleMessage } from '../api/client'
+import { loadAnonFilter, saveAnonFilter } from '../storage'
+import { useAnonCall } from '../lib/useAnonCall'
+import { FilteredVideo } from './FilteredVideo'
 
 type Props = {
   room: UmingleRoom
   guestId: string
+  localStream: MediaStream | null
+  cameraError: string | null
   onRoom: (room: UmingleRoom) => void
   onSkip: () => void
   onLeave: () => void
@@ -15,6 +20,8 @@ type Props = {
 export function UmingleChat({
   room,
   guestId,
+  localStream,
+  cameraError,
   onRoom,
   onSkip,
   onLeave,
@@ -23,52 +30,24 @@ export function UmingleChat({
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
-  const [cameraReady, setCameraReady] = useState(false)
+  const [filter, setFilter] = useState(loadAnonFilter)
   const logRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const { remoteStream, connection, signalError } = useAnonCall(room, guestId, localStream)
+
+  useEffect(() => {
+    saveAnonFilter(filter)
+  }, [filter])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
       void fetchUmingleChat(room.id, guestId).then(onRoom).catch(() => undefined)
-    }, 1500)
+    }, 800)
     return () => window.clearInterval(timer)
   }, [guestId, onRoom, room.id])
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
   }, [room.messages.length])
-
-  useEffect(() => {
-    let stream: MediaStream | null = null
-    let cancelled = false
-
-    const startCamera = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
-          audio: false,
-        })
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop())
-          return
-        }
-        const video = videoRef.current
-        if (video) {
-          video.srcObject = stream
-          await video.play()
-          setCameraReady(true)
-        }
-      } catch {
-        if (!cancelled) setCameraReady(false)
-      }
-    }
-
-    void startCamera()
-    return () => {
-      cancelled = true
-      stream?.getTracks().forEach((track) => track.stop())
-    }
-  }, [])
 
   const send = async (event: FormEvent) => {
     event.preventDefault()
@@ -91,6 +70,16 @@ export function UmingleChat({
   const peerName = peer?.displayName ?? 'Guest'
   const peerCode = peer?.phenotype.code ?? ''
   const similar = room.compatibility ?? peer?.compatibility
+  const peerGone = Boolean(room.peerLeft || room.endedAt)
+  const live = connection === 'connected' && Boolean(remoteStream) && !peerGone
+
+  let remoteStatus = 'Connecting…'
+  if (peerGone) remoteStatus = 'Peer left'
+  else if (signalError) remoteStatus = signalError
+  else if (connection === 'failed') remoteStatus = 'Video connection failed'
+  else if (live) remoteStatus = 'Live'
+  else if (!localStream && cameraError) remoteStatus = 'Waiting for your camera'
+  else if (connection === 'connecting') remoteStatus = 'Connecting cameras…'
 
   return (
     <section className="umingle-chat umingle-chat--video" aria-label="Live video chat">
@@ -107,21 +96,58 @@ export function UmingleChat({
         </div>
       </div>
 
+      <div className="anon-chat__tools" aria-label="Porn filter">
+        <button
+          type="button"
+          className={`anon-chat__toggle${filter.enabled ? ' anon-chat__toggle--on' : ''}`}
+          aria-pressed={filter.enabled}
+          onClick={() => setFilter((current) => ({ ...current, enabled: !current.enabled }))}
+        >
+          {filter.enabled ? 'Filter on' : 'Filter off'}
+        </button>
+        {filter.enabled && (
+          <label className="anon-chat__severity">
+            Severity
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={filter.severity}
+              onChange={(event) =>
+                setFilter((current) => ({ ...current, severity: Number(event.target.value) }))
+              }
+            />
+            <span>{filter.severity}</span>
+          </label>
+        )}
+        <p className="anon-chat__disclaimer">
+          Covers likely NSFW regions. Not a medical or legal classifier.
+        </p>
+      </div>
+
       <div className="umingle-stage">
         <div className="umingle-remote" aria-label="Peer video">
           <div className="umingle-remote__feed">
-            <div className="umingle-remote__silhouette" aria-hidden="true">
-              <svg viewBox="0 0 200 260" fill="none">
-                <ellipse cx="100" cy="95" rx="62" ry="72" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M55 200 Q100 240 145 200" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-            </div>
-            <span className="umingle-remote__live">Live</span>
+            {remoteStream && !peerGone ? (
+              <FilteredVideo
+                stream={remoteStream}
+                filterOn={filter.enabled}
+                severity={filter.severity}
+                label="Peer camera"
+              />
+            ) : (
+              <div className="umingle-remote__wait">
+                <p>{remoteStatus}</p>
+              </div>
+            )}
+            <span className={`umingle-remote__live${live ? '' : ' umingle-remote__live--wait'}`}>
+              {live ? 'Live' : peerGone ? 'Left' : 'Wait'}
+            </span>
             <button
               type="button"
               className="umingle-skip"
               onClick={onSkip}
-              disabled={!peer || skipping}
+              disabled={skipping}
             >
               Skip
             </button>
@@ -137,15 +163,16 @@ export function UmingleChat({
 
         <div className="umingle-self">
           <div className="umingle-self__frame">
-            <video
-              ref={videoRef}
-              className="umingle-self__video"
-              muted
-              playsInline
-              autoPlay
-              aria-label="Your camera"
-            />
-            {!cameraReady && (
+            {localStream ? (
+              <FilteredVideo
+                stream={localStream}
+                muted
+                mirrored
+                filterOn={filter.enabled}
+                severity={filter.severity}
+                label="Your camera"
+              />
+            ) : (
               <div className="umingle-self__fallback" aria-hidden="true">
                 <svg viewBox="0 0 200 260" fill="none">
                   <ellipse cx="100" cy="95" rx="62" ry="72" stroke="currentColor" strokeWidth="1.5" />
@@ -157,6 +184,12 @@ export function UmingleChat({
           <span>You</span>
         </div>
       </div>
+
+      {(cameraError || signalError || peerGone) && (
+        <p className="umingle__error" role="status">
+          {peerGone ? 'The other guest left. Skip to find someone else, or leave.' : cameraError || signalError}
+        </p>
+      )}
 
       <div className="umingle-chat__log umingle-chat__log--compact" ref={logRef} role="log">
         {room.messages.length === 0 && (

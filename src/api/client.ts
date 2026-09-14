@@ -34,6 +34,17 @@ export type UmingleGuest = {
   displayName: string
   anonymous: true
   phenotype: Phenotype
+  status?: 'lobby' | 'seeking' | 'connected' | 'offline'
+}
+
+export type SignalType = 'offer' | 'answer' | 'ice'
+
+export type UmingleSignal = {
+  id: string
+  fromGuestId: string
+  type: SignalType
+  payload: Record<string, unknown>
+  createdAt: number
 }
 
 export type UmingleJoinResponse = {
@@ -41,6 +52,8 @@ export type UmingleJoinResponse = {
   matches: Match[]
   total: number
   returned: number
+  liveCount: number
+  similarCount: number
   matchType: 'anonymous'
   account: 'none'
   source: string
@@ -57,6 +70,10 @@ export type ChatMessage = {
 export type UmingleRoom = {
   id: string
   matchType: 'anonymous'
+  callId?: string | null
+  endedAt?: number | null
+  leftBy?: string | null
+  peerLeft?: boolean
   compatibility?: number | null
   peer: {
     guestId: string
@@ -64,16 +81,29 @@ export type UmingleRoom = {
     phenotype: Phenotype
     anonymous: boolean
     compatibility?: number | null
+    status?: string | null
   } | null
+  signals: UmingleSignal[]
   messages: ChatMessage[]
 }
 
 export type AnonLiveResponse = {
   guest: UmingleGuest
   room: UmingleRoom | null
+  waiting: boolean
+  liveCount: number
+  similarCount: number
   matchType: 'anonymous'
   account: 'none'
   minCompatibility: number
+}
+
+export type AnonHeartbeatResponse = {
+  guest: UmingleGuest
+  room: UmingleRoom | null
+  matches: Match[]
+  liveCount: number
+  similarCount: number
 }
 
 const UMINGLE_GUEST_KEY = 'phenomatch.umingleGuestId'
@@ -225,6 +255,41 @@ export async function sendUmingleMessage(roomId: string, guestId: string, text: 
     body: JSON.stringify({ guestId, text }),
   })
   if (!res.ok) throw new Error(await readError(res, 'umingle send failed'))
+  const body = (await res.json()) as { room: UmingleRoom }
+  return body.room
+}
+
+export async function heartbeatAnon(guestId: string): Promise<AnonHeartbeatResponse> {
+  const res = await fetch('/api/umingle/heartbeat', {
+    method: 'POST',
+    headers: apiHeaders(true),
+    body: JSON.stringify({ guestId }),
+  })
+  if (!res.ok) throw new Error(await readError(res, 'anon heartbeat failed'))
+  return (await res.json()) as AnonHeartbeatResponse
+}
+
+export async function leaveAnon(guestId: string, goOffline = false): Promise<void> {
+  const res = await fetch('/api/umingle/leave', {
+    method: 'POST',
+    headers: apiHeaders(true),
+    body: JSON.stringify({ guestId, goOffline }),
+  })
+  if (!res.ok) throw new Error(await readError(res, 'anon leave failed'))
+}
+
+export async function postAnonSignal(
+  roomId: string,
+  guestId: string,
+  type: SignalType,
+  payload: Record<string, unknown>,
+): Promise<UmingleRoom> {
+  const res = await fetch('/api/umingle/signal', {
+    method: 'POST',
+    headers: apiHeaders(true),
+    body: JSON.stringify({ roomId, guestId, type, payload }),
+  })
+  if (!res.ok) throw new Error(await readError(res, 'anon signal failed'))
   const body = (await res.json()) as { room: UmingleRoom }
   return body.room
 }

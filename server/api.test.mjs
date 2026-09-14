@@ -129,25 +129,68 @@ test('scanned profile becomes a match candidate for other profiles', async () =>
   )
 })
 
-test('anon live chat connects a similar phenotype at 50%+', async () => {
-  const live = await fetch(`${base}/api/umingle/live`, {
+test('anon live waits alone then pairs two similar guests', async () => {
+  const first = await fetch(`${base}/api/umingle/live`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({}),
   })
-  assert.equal(live.status, 200)
-  const body = await live.json()
-  assert.equal(body.matchType, 'anonymous')
-  assert.ok(body.room)
-  assert.ok((body.room.compatibility ?? 0) >= 50)
-  assert.ok(body.room.messages.length >= 1)
+  assert.equal(first.status, 200)
+  const alone = await first.json()
+  assert.equal(alone.matchType, 'anonymous')
+  assert.equal(alone.room, null)
+  assert.equal(alone.waiting, true)
+  assert.equal(alone.liveCount, 1)
 
-  const send = await fetch(`${base}/api/umingle/chat/${encodeURIComponent(body.room.id)}/messages`, {
+  const second = await fetch(`${base}/api/umingle/live`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ guestId: body.guest.id, text: 'Hey from a similar phenotype.' }),
+    body: JSON.stringify({}),
+  })
+  const paired = await second.json()
+  assert.ok(paired.room)
+  assert.equal(paired.waiting, false)
+  assert.ok((paired.room.compatibility ?? 0) >= 50)
+  assert.equal(paired.room.peer.guestId, alone.guest.id)
+
+  const again = await fetch(`${base}/api/umingle/live`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: alone.guest.id }),
+  })
+  const joined = await again.json()
+  assert.equal(joined.room.id, paired.room.id)
+
+  const signal = await fetch(`${base}/api/umingle/signal`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      roomId: paired.room.id,
+      guestId: paired.guest.id,
+      type: 'offer',
+      payload: { type: 'offer', sdp: 'v=0' },
+    }),
+  })
+  assert.equal(signal.status, 200)
+  const signaled = await signal.json()
+  assert.equal(signaled.room.signals[0].type, 'offer')
+
+  const send = await fetch(`${base}/api/umingle/chat/${encodeURIComponent(paired.room.id)}/messages`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: paired.guest.id, text: 'Hey from a similar phenotype.' }),
   })
   assert.equal(send.status, 200)
   const sent = await send.json()
   assert.ok(sent.room.messages.some((m) => m.text === 'Hey from a similar phenotype.'))
+  assert.equal(sent.room.messages.filter((m) => !m.mine).length, 0)
+
+  const beat = await fetch(`${base}/api/umingle/heartbeat`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: alone.guest.id }),
+  })
+  assert.equal(beat.status, 200)
+  const living = await beat.json()
+  assert.equal(living.room.id, paired.room.id)
 })

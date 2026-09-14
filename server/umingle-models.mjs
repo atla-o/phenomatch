@@ -10,6 +10,9 @@ export function seedGuestFromMatch(match) {
     complementaryTraits: match.complementaryTraits,
     distance: 'nearby',
     joinedAt: Date.now(),
+    lastSeen: 0,
+    status: 'offline',
+    roomId: null,
   }
 }
 
@@ -41,6 +44,7 @@ export function toUmingleMatch(guest) {
     matchType: 'anonymous',
     guestId: guest.id,
     anonymous: true,
+    status: guest.status || 'lobby',
   }
 }
 
@@ -48,14 +52,16 @@ export function roomKey(a, b) {
   return [a, b].sort().join('__')
 }
 
-export function liveReply(peer) {
-  return `Still here. ${peer.displayName} — similar phenotype.`
-}
-
 export function serializeRoom(room, guestId, peer) {
+  const endedAt = room.endedAt || null
+  const leftBy = room.leftBy || null
   return {
     id: room.id,
     matchType: 'anonymous',
+    callId: room.callId || null,
+    endedAt,
+    leftBy,
+    peerLeft: Boolean(endedAt && leftBy && leftBy !== guestId),
     peer: peer
       ? {
           guestId: peer.id,
@@ -63,9 +69,11 @@ export function serializeRoom(room, guestId, peer) {
           phenotype: peer.phenotype,
           anonymous: true,
           compatibility: room.compatibility ?? null,
+          status: peer.status || null,
         }
       : null,
     compatibility: room.compatibility ?? null,
+    signals: Array.isArray(room.signals) ? room.signals : [],
     messages: (room.messages || []).map((m) => ({
       id: m.id,
       fromGuestId: m.fromGuestId,
