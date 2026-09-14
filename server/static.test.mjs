@@ -51,6 +51,7 @@ test('GET / serves the built UI', async () => {
   const res = await fetch(`${base}/`)
   assert.equal(res.status, 200)
   assert.match(res.headers.get('content-type') || '', /text\/html/)
+  assert.equal(res.headers.get('permissions-policy'), 'camera=(self), microphone=(self)')
   assert.match(await res.text(), /PhenoMatch/)
 })
 
