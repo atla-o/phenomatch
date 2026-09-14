@@ -29,14 +29,25 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100svh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
-  min-height: 100svh;
+  height: 100svh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: var(--white);
 }
 
 #root {
-  min-height: 100svh;
+  height: 100svh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 h1, h2, h3, h4 {
