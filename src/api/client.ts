@@ -92,11 +92,13 @@ export type AnonLiveResponse = {
   guest: UmingleGuest
   room: UmingleRoom | null
   waiting: boolean
+  matches?: Match[]
   liveCount: number
   similarCount: number
   matchType: 'anonymous'
   account: 'none'
   minCompatibility: number
+  pairing?: 'similar' | 'best-available' | 'none'
 }
 
 export type AnonHeartbeatResponse = {
@@ -228,11 +230,15 @@ export async function joinAnonLive(phenotype: Phenotype, skipPeerId?: string): P
   return body
 }
 
-export async function openUmingleChat(guestId: string, peerGuestId: string): Promise<UmingleRoom> {
+export async function openUmingleChat(
+  guestId: string,
+  peerGuestId: string,
+  compatibility?: number | null,
+): Promise<UmingleRoom> {
   const res = await fetch('/api/umingle/chat', {
     method: 'POST',
     headers: apiHeaders(true),
-    body: JSON.stringify({ guestId, peerGuestId }),
+    body: JSON.stringify({ guestId, peerGuestId, compatibility }),
   })
   if (!res.ok) throw new Error(await readError(res, 'umingle chat failed'))
   const body = (await res.json()) as { room: UmingleRoom }
@@ -270,11 +276,16 @@ export async function heartbeatAnon(guestId: string): Promise<AnonHeartbeatRespo
   return (await res.json()) as AnonHeartbeatResponse
 }
 
-export async function leaveAnon(guestId: string, goOffline = false): Promise<void> {
+export async function leaveAnon(
+  guestId: string,
+  goOffline = false,
+  { keepalive = false }: { keepalive?: boolean } = {},
+): Promise<void> {
   const res = await fetch('/api/umingle/leave', {
     method: 'POST',
     headers: apiHeaders(true),
     body: JSON.stringify({ guestId, goOffline }),
+    keepalive,
   })
   if (!res.ok) throw new Error(await readError(res, 'anon leave failed'))
 }

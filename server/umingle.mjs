@@ -10,10 +10,13 @@ import { memoryDatastore } from './memory-store.mjs'
 import { roomKey, serializeRoom, toUmingleMatch } from './umingle-models.mjs'
 import {
   ANON_MIN_COMPAT,
+  PAIR_ATTEMPTS,
   PRESENCE_TTL_MS,
   isLiveGuest,
+  isPairableGuest,
   isValidSignalType,
   pruneSignals,
+  selectPairingPicks,
 } from '../shared/anon-live.mjs'
 
 export { ANON_MIN_COMPAT, PRESENCE_TTL_MS }
@@ -30,8 +33,9 @@ export function createUmingle(store, { now = () => Date.now(), ttlMs = PRESENCE_
   }
 
   async function touch(guest, patch = {}) {
+    const latest = (guest?.id && (await store.getGuest(guest.id))) || guest
     const next = {
-      ...guest,
+      ...latest,
       ...patch,
       lastSeen: clock(),
       seeded: false,
@@ -152,14 +156,13 @@ export function createUmingle(store, { now = () => Date.now(), ttlMs = PRESENCE_
       }
     }
     await store.saveRoom(room)
-    return serializeRoom(room, guestId, peer)
+    await touch(guest, { status: 'connected', roomId: room.id })
+    const peerNow = await touch(peer, { status: 'connected', roomId: room.id })
+    return serializeRoom(room, guestId, peerNow)
   }
 
   async function pairWith(guest, peer, compatibility) {
-    const room = await openChat(guest.id, peer.id, compatibility)
-    await touch(guest, { status: 'connected', roomId: room.id })
-    await touch(peer, { status: 'connected', roomId: room.id })
-    return room
+    return openChat(guest.id, peer.id, compatibility)
   }
 
   async function endRoom(roomId, guestId) {
@@ -214,17 +217,42 @@ export function createUmingle(store, { now = () => Date.now(), ttlMs = PRESENCE_
       }
     }
 
-    const ranked = (await similarMatches(current)).filter((match) => match.guestId !== current.skipPeerId)
-    for (const pick of ranked) {
-      const latest = await readAssignedRoom(current.id)
-      if (latest.room) return latest.room
-      current = latest.guest || current
-      const peer = await store.getGuest(pick.guestId)
-      if (!peer || !isLiveGuest(peer, clock(), ttlMs)) continue
-      if (peer.status !== 'seeking') continue
-      if (peer.skipPeerId === current.id) continue
-      if (peer.roomId) continue
-      return pairWith(current, peer, pick.compatibility)
+    for (let attempt = 0; attempt < PAIR_ATTEMPTS; attempt += 1) {
+      const assigned = await readAssignedRoom(current.id)
+      if (assigned.room) return assigned.room
+      current = assigned.guest || current
+
+      const others = await listLive(current.id)
+      const pairable = others.filter(
+        (peer) =>
+          peer.id !== current.skipPeerId &&
+          peer.skipPeerId !== current.id &&
+          !peer.roomId &&
+          isPairableGuest(peer, clock(), ttlMs),
+      )
+      const ranked = rankMatches(current.phenotype, pairable.map(toUmingleMatch))
+      const { picks } = selectPairingPicks(ranked, {
+        otherLiveCount: others.length,
+        seekingPeerCount: pairable.filter((peer) => peer.status === 'seeking').length,
+        selfSeeking: true,
+      })
+
+      for (const pick of picks) {
+        const latest = await readAssignedRoom(current.id)
+        if (latest.room) return latest.room
+        current = latest.guest || current
+        const peer = await store.getGuest(pick.guestId)
+        if (
+          !peer ||
+          peer.id === current.skipPeerId ||
+          peer.skipPeerId === current.id ||
+          peer.roomId ||
+          !isPairableGuest(peer, clock(), ttlMs)
+        ) {
+          continue
+        }
+        return pairWith(current, peer, pick.compatibility)
+      }
     }
     return null
   }
@@ -233,17 +261,15 @@ export function createUmingle(store, { now = () => Date.now(), ttlMs = PRESENCE_
     const guest = guestId ? await store.getGuest(guestId) : null
     if (!guest || guest.seeded) return null
     let current = await touch(guest, {})
-    if (current.roomId) {
-      const room = await store.getRoom(current.roomId)
-      if (room) {
-        if (current.status !== 'connected' && !room.endedAt) {
-          current = await touch(current, { status: 'connected' })
-        }
-        return {
-          guest: current,
-          room: serializeRoom(room, current.id, await peerOf(room, current.id)),
-        }
-      }
+    const assigned = await readAssignedRoom(current.id)
+    if (assigned.room) {
+      return { guest: assigned.guest, room: assigned.room }
+    }
+    current = assigned.guest || current
+    if (current.status === 'seeking') {
+      const room = await connectSimilar(current)
+      current = (await store.getGuest(current.id)) || current
+      return { guest: current, room }
     }
     return { guest: current, room: null }
   }

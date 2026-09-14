@@ -5,6 +5,7 @@ import {
   joinAnonLive,
   joinUmingleLobby,
   leaveAnon,
+  openUmingleChat,
   type UmingleRoom,
 } from '../api/client'
 import { useLocalCamera } from '../lib/useLocalCamera'
@@ -34,6 +35,29 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
   const guestIdRef = useRef<string | null>(null)
   guestIdRef.current = guestId
 
+  const applyHeartbeat = useCallback(
+    (result: {
+      matches?: Match[]
+      liveCount?: number
+      similarCount?: number
+      room?: UmingleRoom | null
+      guest?: { id?: string; status?: string }
+    }) => {
+      if (result.guest?.id) setGuestId(result.guest.id)
+      if (result.matches) setMatches(result.matches)
+      if (result.liveCount != null) setLiveCount(result.liveCount)
+      if (result.similarCount != null) setSimilarCount(result.similarCount)
+      if (result.room && !result.room.endedAt) {
+        setRoom(result.room)
+        setWaiting(false)
+        setError(null)
+        return
+      }
+      if (result.guest?.status === 'seeking') setWaiting(true)
+    },
+    [],
+  )
+
   useEffect(() => {
     if (!hasProfile) return
     let cancelled = false
@@ -46,6 +70,10 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
         setMatches(result.matches)
         setLiveCount(result.liveCount)
         setSimilarCount(result.similarCount)
+        if (result.guest.status === 'seeking') setWaiting(true)
+        if (result.guest.status === 'seeking' || result.guest.status === 'connected') {
+          void heartbeatAnon(result.guest.id).then(applyHeartbeat).catch(() => undefined)
+        }
       })
       .catch(() => {
         if (cancelled) return
@@ -62,29 +90,35 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
 
   useEffect(() => {
     if (!guestId) return
-    const timer = window.setInterval(() => {
-      void heartbeatAnon(guestId)
-        .then((result) => {
-          setMatches(result.matches)
-          setLiveCount(result.liveCount)
-          setSimilarCount(result.similarCount)
-          if (result.room && !result.room.endedAt) {
-            setRoom(result.room)
-            setWaiting(false)
-            setError(null)
-          }
-        })
-        .catch(() => undefined)
-    }, 4000)
+    const beat = () => {
+      void heartbeatAnon(guestId).then(applyHeartbeat).catch(() => undefined)
+    }
+    beat()
+    const timer = window.setInterval(beat, 4000)
     return () => window.clearInterval(timer)
-  }, [guestId])
+  }, [applyHeartbeat, guestId])
 
   useEffect(() => {
-    return () => {
+    const goOffline = () => {
       const id = guestIdRef.current
-      if (id) void leaveAnon(id, true).catch(() => undefined)
+      if (id) void leaveAnon(id, true, { keepalive: true }).catch(() => undefined)
     }
-  }, [])
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return
+      const id = guestIdRef.current
+      if (id) void heartbeatAnon(id).then(applyHeartbeat).catch(() => undefined)
+    }
+    window.addEventListener('pagehide', goOffline)
+    window.addEventListener('beforeunload', goOffline)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('pagehide', goOffline)
+      window.removeEventListener('beforeunload', goOffline)
+      document.removeEventListener('visibilitychange', onVisibility)
+      // React unmount (StrictMode, Data↔Anon, scaled-shell remounts) must not
+      // force offline — that wipes presence so the other browser cannot pair.
+    }
+  }, [applyHeartbeat])
 
   const pollLive = useCallback(async (skipPeerId?: string, { markJoining = false } = {}) => {
     if (markJoining) setJoining(true)
@@ -94,6 +128,7 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
       setGuestId(result.guest.id)
       setLiveCount(result.liveCount)
       setSimilarCount(result.similarCount)
+      if (result.matches) setMatches(result.matches)
       if (result.room) {
         setRoom(result.room)
         setWaiting(false)
@@ -112,6 +147,7 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
 
   useEffect(() => {
     if (!waiting || room) return
+    void pollLive()
     const timer = window.setInterval(() => {
       void pollLive()
     }, 2000)
@@ -126,6 +162,21 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
       } catch {
         /* still leave the waiting UI */
       }
+    }
+  }
+
+  const openPeer = async (peerGuestId?: string, compatibility?: number) => {
+    if (!guestId || !peerGuestId || joining) return
+    setJoining(true)
+    setError(null)
+    try {
+      const next = await openUmingleChat(guestId, peerGuestId, compatibility)
+      setRoom(next)
+      setWaiting(false)
+    } catch {
+      setError('Could not open chat.')
+    } finally {
+      setJoining(false)
     }
   }
 
@@ -170,23 +221,27 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
     othersLive === 0
       ? 'You are the only person live.'
       : similar === 0
-        ? `${othersLive} live now · none at 50%+ similarity.`
+        ? `${othersLive} live now · none at 50%+ · will pair best available.`
         : `${othersLive} live now · ${similar} at 50%+.`
 
   return (
     <div className="anon">
       <div className="anon__intro">
         <p className="anon__lede">
-          Anonymous live chat with a similar phenotype (50%+). Chrome uses your
-          camera over WebRTC — the Mac client is optional. This is cluster
-          similarity, not a medical score.
+          Anonymous live chat. Prefers 50%+ similarity; if you two are the only
+          ones live, you still get a room (best available). Text works even if
+          video is still connecting. Chrome camera over WebRTC — the Mac client
+          is optional. Cluster similarity, not a medical score.
         </p>
         <p className="umingle__status" role="status">
           {loading ? 'Checking who is live…' : presenceLine}
         </p>
         {waiting ? (
           <div className="anon__waiting" role="status">
-            <p>Waiting for someone similar (50%+) to go live. No fake peer video.</p>
+            <p>
+              Waiting for someone to go live. Prefers 50%+; pairs best available
+              so two people are not stranded. No fake peer video.
+            </p>
             <button type="button" className="btn btn--outline" onClick={() => void cancelWait()}>
               Cancel
             </button>
@@ -250,13 +305,24 @@ export function AnonymousMatch({ phenotype, hasProfile, onGoPheno }: Props) {
       )}
 
       {!loading && matches.length > 0 && (
-        <ul className="anon__live-list" aria-label="Live similar phenotypes">
-          {matches.slice(0, 2).map((item) => (
-            <li key={item.guestId ?? item.phenotype.id}>
-              <span>{item.phenotype.name}</span>
-              <span>{item.compatibility}% · live</span>
-            </li>
-          ))}
+        <ul className="anon__live-list" aria-label="Live phenotypes">
+          {matches.map((item) => {
+            const similarEnough = item.compatibility >= 50
+            return (
+              <li key={item.guestId ?? item.phenotype.id}>
+                <button
+                  type="button"
+                  disabled={joining || !guestId || !item.guestId}
+                  onClick={() => void openPeer(item.guestId, item.compatibility)}
+                >
+                  <span>{item.phenotype.name}</span>
+                  <span>
+                    {item.compatibility}% · {similarEnough ? '50%+' : 'best available'} · tap to chat
+                  </span>
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

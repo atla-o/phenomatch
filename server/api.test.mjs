@@ -255,3 +255,148 @@ test('anon live waits alone then pairs two similar guests', async () => {
   const living = await beat.json()
   assert.equal(living.room.id, paired.room.id)
 })
+
+test('anon leave without goOffline stays live for pairing', async () => {
+  const join = await fetch(`${base}/api/umingle/join`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  const body = await join.json()
+  const guestId = body.guest.id
+  const live = await fetch(`${base}/api/umingle/live`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId }),
+  })
+  assert.equal((await live.json()).guest.status, 'seeking')
+
+  const soft = await fetch(`${base}/api/umingle/leave`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId, goOffline: false }),
+  })
+  const softBody = await soft.json()
+  assert.equal(softBody.guest.status, 'lobby')
+
+  const beat = await fetch(`${base}/api/umingle/heartbeat`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId }),
+  })
+  const living = await beat.json()
+  assert.equal(living.guest.status, 'lobby')
+  assert.ok(living.liveCount >= 1)
+})
+
+test('tap chat opens a room both guests can text in', async () => {
+  const aJoin = await fetch(`${base}/api/umingle/join`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  const bJoin = await fetch(`${base}/api/umingle/join`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  const a = await aJoin.json()
+  const b = await bJoin.json()
+  const chat = await fetch(`${base}/api/umingle/chat`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      guestId: a.guest.id,
+      peerGuestId: b.guest.id,
+      compatibility: 44,
+    }),
+  })
+  assert.equal(chat.status, 200)
+  const opened = await chat.json()
+  assert.ok(opened.room?.id)
+  assert.equal(opened.room.peer.guestId, b.guest.id)
+
+  const beat = await fetch(`${base}/api/umingle/heartbeat`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: b.guest.id }),
+  })
+  const living = await beat.json()
+  assert.equal(living.room.id, opened.room.id)
+
+  const send = await fetch(`${base}/api/umingle/chat/${encodeURIComponent(opened.room.id)}/messages`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: a.guest.id, text: 'tap opened the room' }),
+  })
+  const sent = await send.json()
+  assert.ok(sent.room.messages.some((m) => m.text === 'tap opened the room'))
+})
+
+test('concurrent live posts still pair two guests', async () => {
+  const isolated = {
+    id: 'concurrent-cluster',
+    name: 'Concurrent Cluster',
+    code: 'GN-CC',
+    tagline: 'Isolated concurrent pairing',
+    genealogyLikelihood: 1,
+    genealogyLineage: 'concurrent',
+    traits: [
+      { id: 'melanin', label: 'Melanin Index', value: 1, category: 'physical' },
+      { id: 'eye-color', label: 'Eye Color', value: 1, category: 'physical' },
+      { id: 'hair', label: 'Hair Pattern', value: 1, category: 'physical' },
+      { id: 'nose', label: 'Nose Shape', value: 1, category: 'physical' },
+      { id: 'lips', label: 'Lip Fullness', value: 1, category: 'physical' },
+      { id: 'facial', label: 'Facial Structure', value: 1, category: 'physical' },
+      { id: 'jaw', label: 'Jaw Line', value: 1, category: 'physical' },
+      { id: 'cheekbone', label: 'Cheekbone Structure', value: 1, category: 'physical' },
+      { id: 'tribe', label: 'Tribe', value: 1, category: 'tribal' },
+    ],
+  }
+  const [firstRes, secondRes] = await Promise.all([
+    fetch(`${base}/api/umingle/live`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ phenotype: isolated }),
+    }),
+    fetch(`${base}/api/umingle/live`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ phenotype: isolated }),
+    }),
+  ])
+  const first = await firstRes.json()
+  const second = await secondRes.json()
+  let room = first.room || second.room
+  if (!first.room) {
+    const retry = await fetch(`${base}/api/umingle/live`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ guestId: first.guest.id, phenotype: isolated }),
+    })
+    room = (await retry.json()).room || room
+  }
+  if (!second.room) {
+    const retry = await fetch(`${base}/api/umingle/live`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ guestId: second.guest.id, phenotype: isolated }),
+    })
+    room = (await retry.json()).room || room
+  }
+  assert.ok(room)
+  const beatA = await fetch(`${base}/api/umingle/heartbeat`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: first.guest.id }),
+  })
+  const beatB = await fetch(`${base}/api/umingle/heartbeat`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ guestId: second.guest.id }),
+  })
+  const livingA = await beatA.json()
+  const livingB = await beatB.json()
+  assert.ok(livingA.room?.id)
+  assert.equal(livingA.room.id, livingB.room.id)
+})
