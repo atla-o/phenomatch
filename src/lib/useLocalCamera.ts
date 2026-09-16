@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { cameraErrorMessage, isAbortError, requestLocalCamera } from './localCamera'
 
-export function useLocalCamera() {
+export function useLocalCamera({ audio = true }: { audio?: boolean } = {}) {
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
@@ -21,7 +21,7 @@ export function useLocalCamera() {
 
     const start = async () => {
       try {
-        active = await requestLocalCamera({ signal: controller.signal })
+        active = await requestLocalCamera({ signal: controller.signal, audio })
         if (controller.signal.aborted) {
           active?.getTracks().forEach((track) => track.stop())
           return
@@ -44,7 +44,7 @@ export function useLocalCamera() {
       controller.abort()
       active?.getTracks().forEach((track) => track.stop())
     }
-  }, [retryKey])
+  }, [retryKey, audio])
 
   return { stream, error, ready, requesting, retry }
 }

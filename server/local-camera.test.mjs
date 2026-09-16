@@ -17,6 +17,22 @@ describe('local camera request', () => {
     assert.match(cameraErrorMessage({ name: 'NotReadableError' }), /in use/)
   })
 
+  it('requests video-only constraints when audio is false', async () => {
+    const tried = []
+    const stream = { id: 'scan' }
+    const result = await requestLocalCamera({
+      audio: false,
+      wait: async () => undefined,
+      getUserMedia: async (constraints) => {
+        tried.push(constraints)
+        return stream
+      },
+    })
+    assert.equal(result, stream)
+    assert.equal(tried[0].audio, false)
+    assert.equal(tried.every((item) => item.audio !== true), true)
+  })
+
   it('falls back from facingMode + size to video:true', async () => {
     const tried = []
     const stream = { id: 'ok' }
