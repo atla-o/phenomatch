@@ -142,3 +142,23 @@ details summary::-webkit-details-marker {
 .btn--solid:disabled {
   opacity: 0.5;
 }
+
+/* Force light UI: black on white, ignore system dark mode */
+html {
+  color-scheme: light;
+}
+html,
+body {
+  background: #fff;
+  color: #000;
+}
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: light;
+  }
+  html,
+  body {
+    background: #fff;
+    color: #000;
+  }
+}
