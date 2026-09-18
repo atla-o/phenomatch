@@ -9,6 +9,18 @@ Priority order for every task unless Devo says otherwise:
 2. Black text on **white** backgrounds always — never follow system dark mode / white-on-black.
 3. Ship via merge to `main` (Cloud Run Actions). Do not deploy from the agent unless Devo explicitly says push/ship/merge and deploy.
 
+## Live UI preview
+
+Whenever UI work is **not** on production `main` (local/dev server, feature branch, or an unmerged PR), give Devo a **clickable live preview URL** he can open inside Cursor to watch the UI as it changes. Screenshots are extra, not a substitute.
+
+Paste the **full URL** in the reply (and keep it updated if the port changes):
+
+- Cloud Agent / Cursor-forwarded app: `http://127.0.0.1:5173/` (Vite; Cursor maps this agent’s 5173 into Simple Browser / the plug-icon Ports menu).
+- Matching API health: `http://127.0.0.1:8787/api/health` (also proxied as `/api` on the Vite origin).
+- Production (only after merge to `main`): `https://phenomatch.devoutshaman.com`
+
+Do not point at `https://cursor.com/agents/...` as the UI. That is the agent run page, not the app. If auto-forward is off, say so and still paste `http://127.0.0.1:5173/` so Devo can open it from the Ports / Simple Browser plug.
+
 Parent: Devo (lateral health). Publisher: atla-o. GCP app data: project `devo-holding`. Public hosts on `*.devoutshaman.com` (Cloudflare DNS-only → Cloud Run).
 
 Siblings: Phenomatch, Antiporn, Lessfret, Lightround, Acashi. Holding lander: atla-o/devo → devoutshaman.com.
@@ -44,6 +56,7 @@ This GitHub repo is the cloud workspace. Cloud agents clone `atla-o/phenomatch` 
 
 - Install: `npm install` (see `.cursor/environment.json`).
 - Cloud start: `npm run cloud -- --host 0.0.0.0 --port 5173` (Vite + matching API).
+- Live UI preview for unmerged work: `http://127.0.0.1:5173/` — always paste this full URL in replies while UI is in flux (see **Live UI preview** above).
 - Matching API: `http://127.0.0.1:8787/api/health` (proxied from `/api` on the Vite server).
 - Tests: `npm test`. Build check: `npm run build`.
 - Production image: `Dockerfile` builds the Vite UI and serves it from `server/` on `0.0.0.0:$PORT`. Do not deploy to GCP from a cloud agent.
